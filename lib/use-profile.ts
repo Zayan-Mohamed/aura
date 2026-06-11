@@ -10,7 +10,7 @@
  */
 import * as React from "react";
 
-export type ShopperLanguage = "auto" | "english" | "sinhala" | "tanglish";
+export type ShopperLanguage = "auto" | "english" | "sinhala" | "singlish" | "tanglish";
 
 export type ShopperProfile = {
   name: string;

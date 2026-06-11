@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import { motion } from "motion/react";
-import { ArrowUpRight, Truck } from "lucide-react";
+import { ArrowUpRight, Truck, Plus, Check } from "lucide-react";
 import type { Product } from "@/lib/kapruka";
 import { formatMoney, discountPct } from "@/lib/format";
 import { ProductImage } from "./product-image";
 import { Badge } from "@/components/ui/badge";
+import { basketStore } from "@/lib/use-basket";
 import { cn } from "@/lib/utils";
 
 export function ProductDetail({
@@ -18,7 +19,20 @@ export function ProductDetail({
 }) {
   const images = product.images?.length ? product.images : product.imageUrl ? [product.imageUrl] : [];
   const [active, setActive] = React.useState(0);
+  const [added, setAdded] = React.useState(false);
   const off = discountPct(product.price, product.compareAtPrice);
+
+  const addToBasket = () => {
+    basketStore.add({
+      productId: product.id,
+      name: product.name,
+      price: product.price,
+      imageUrl: product.imageUrl,
+      url: product.url,
+    });
+    setAdded(true);
+    window.setTimeout(() => setAdded(false), 1400);
+  };
 
   return (
     <motion.div
@@ -86,8 +100,18 @@ export function ProductDetail({
         <div className="mt-auto flex flex-wrap gap-2 pt-4">
           <button
             type="button"
+            onClick={addToBasket}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold tracking-wide transition-colors",
+              added ? "bg-jade/15 text-jade" : "bg-gold text-gold-foreground hover:brightness-105",
+            )}
+          >
+            {added ? <><Check className="size-3.5" /> Added</> : <><Plus className="size-3.5" /> Add to basket</>}
+          </button>
+          <button
+            type="button"
             onClick={() => onAsk?.(`Can you deliver "${product.name}" — let me check my city?`)}
-            className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-xs font-semibold tracking-wide text-background transition-colors hover:bg-foreground/85"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-xs font-semibold tracking-wide text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <Truck className="size-3.5" /> Check delivery
           </button>

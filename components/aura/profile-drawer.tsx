@@ -9,10 +9,11 @@ import type { ShopperProfile, ShopperLanguage } from "@/lib/use-profile";
 import { profileHasContent } from "@/lib/use-profile";
 import { cn } from "@/lib/utils";
 
-const LANGUAGES: { value: ShopperLanguage; label: string }[] = [
+const LANGUAGES: { value: ShopperLanguage; label: string; hint?: string }[] = [
   { value: "auto", label: "Auto" },
   { value: "english", label: "English" },
   { value: "sinhala", label: "සිංහල" },
+  { value: "singlish", label: "Singlish" },
   { value: "tanglish", label: "Tanglish" },
 ];
 
@@ -181,15 +182,19 @@ export function ProfileDrawer({
                   />
                 </Field>
 
-                <Field icon={Languages} label="Reply language">
-                  <div className="grid grid-cols-4 gap-1.5">
+                <Field
+                  icon={Languages}
+                  label="Reply language"
+                  hint="Singlish = Sinhala + English · Tanglish = Tamil + English."
+                >
+                  <div className="flex flex-wrap gap-1.5">
                     {LANGUAGES.map((l) => (
                       <button
                         key={l.value}
                         type="button"
                         onClick={() => onUpdate({ language: l.value })}
                         className={cn(
-                          "rounded-lg border px-2 py-1.5 text-xs font-medium transition-colors",
+                          "rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
                           profile.language === l.value
                             ? "border-transparent bg-foreground text-background"
                             : "border-border text-muted-foreground hover:bg-muted hover:text-foreground",

@@ -12,6 +12,7 @@ import { Hero } from "./hero";
 import { Composer } from "./composer";
 import { TypingIndicator } from "./typing";
 import { ProfileDrawer } from "./profile-drawer";
+import { BasketDrawer } from "./basket-drawer";
 import { useProfile } from "@/lib/use-profile";
 
 function ThemeToggle() {
@@ -93,6 +94,7 @@ export function AuraChat() {
               </button>
             )}
             <ThemeToggle />
+            <BasketDrawer onCheckout={ask} />
             <ProfileDrawer profile={profile} onUpdate={update} onClear={clear} />
           </div>
         </div>
@@ -145,7 +147,8 @@ export function AuraChat() {
                 </div>
               )}
 
-              <div ref={endRef} />
+              {/* scroll-mb keeps the latest card clear of the fixed composer. */}
+              <div ref={endRef} className="scroll-mb-40" />
             </div>
           )}
         </div>
