@@ -1,5 +1,10 @@
+import { AuthProvider } from "@/components/auth/auth-provider";
 import { AuraChat } from "@/components/aura/aura-chat";
 
 export default function Home() {
-  return <AuraChat />;
+  return (
+    <AuthProvider>
+      <AuraChat />
+    </AuthProvider>
+  );
 }

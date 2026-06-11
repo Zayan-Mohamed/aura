@@ -81,6 +81,13 @@ export const basketStore = {
     persist();
     emit();
   },
+  /** Overwrite the whole basket (used when syncing from the cloud on sign-in). */
+  replace(next: BasketItem[]) {
+    hydrated = true;
+    items = next;
+    persist();
+    emit();
+  },
 };
 
 const EMPTY: BasketItem[] = [];

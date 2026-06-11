@@ -4,8 +4,9 @@ import * as React from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { AnimatePresence, motion } from "motion/react";
-import { Moon, Sun, RotateCcw, AlertTriangle } from "lucide-react";
+import { Moon, Sun, RotateCcw, AlertTriangle, PanelLeft } from "lucide-react";
 import type { AuraUIMessage } from "@/lib/ai-types";
+import type { ConversationRow } from "@/lib/supabase/types";
 import { AuraMark } from "./aura-mark";
 import { ChatMessage } from "./message";
 import { Hero } from "./hero";
@@ -13,7 +14,12 @@ import { Composer } from "./composer";
 import { TypingIndicator } from "./typing";
 import { ProfileDrawer } from "./profile-drawer";
 import { BasketDrawer } from "./basket-drawer";
-import { useProfile } from "@/lib/use-profile";
+import { LeftSidebar } from "./left-sidebar";
+import { SignInDialog } from "@/components/auth/sign-in-dialog";
+import { useAuth } from "@/components/auth/auth-provider";
+import { useProfile, profileHasContent } from "@/lib/use-profile";
+import { useBasket, basketStore } from "@/lib/use-basket";
+import * as cloud from "@/lib/cloud";
 
 function ThemeToggle() {
   const [dark, setDark] = React.useState(false);
@@ -41,8 +47,16 @@ function ThemeToggle() {
   );
 }
 
+function firstUserText(messages: AuraUIMessage[]): string {
+  const first = messages.find((m) => m.role === "user");
+  const part = first?.parts.find((p) => p.type === "text") as { text?: string } | undefined;
+  return part?.text?.slice(0, 80) ?? "New chat";
+}
+
 export function AuraChat() {
+  const { supabase, user, signOut } = useAuth();
   const { profile, update, clear } = useProfile();
+  const { items: basketItems } = useBasket();
 
   const transport = React.useMemo(
     () => new DefaultChatTransport<AuraUIMessage>({ api: "/api/chat" }),
@@ -52,11 +66,134 @@ export function AuraChat() {
     useChat<AuraUIMessage>({ transport });
 
   const busy = status === "submitted" || status === "streaming";
-  // The saved profile rides along as request body on every turn — the API route
-  // folds it into the system prompt (default delivery city, checkout details…).
   const ask = React.useCallback(
     (text: string) => void sendMessage({ text }, { body: { profile } }),
     [sendMessage, profile],
+  );
+
+  // --- sidebar / auth UI state ---
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [signInOpen, setSignInOpen] = React.useState(false);
+  const [conversations, setConversations] = React.useState<ConversationRow[]>([]);
+  const [conversationId, setConversationId] = React.useState<string | null>(null);
+
+  // Latest-value refs so the persistence effect can read without re-subscribing.
+  const conversationIdRef = React.useRef<string | null>(null);
+  const messagesRef = React.useRef(messages);
+  const profileRef = React.useRef(profile);
+  const savedIds = React.useRef<Set<string>>(new Set());
+  React.useEffect(() => {
+    messagesRef.current = messages;
+    profileRef.current = profile;
+  });
+
+  const refreshConversations = React.useCallback(async () => {
+    if (!user) return;
+    setConversations(await cloud.listConversations(supabase, user.id));
+  }, [supabase, user]);
+
+  // --- on sign-in: pull profile + basket from the cloud (or push local up) ---
+  React.useEffect(() => {
+    if (!user) {
+      // Sync from the external auth system — clear cloud state on sign-out.
+      /* eslint-disable react-hooks/set-state-in-effect */
+      setConversations([]);
+      setConversationId(null);
+      /* eslint-enable react-hooks/set-state-in-effect */
+      conversationIdRef.current = null;
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const dbProfile = await cloud.fetchProfile(supabase, user.id);
+      if (cancelled) return;
+      if (dbProfile && profileHasContent(dbProfile)) update(dbProfile);
+      else if (profileHasContent(profileRef.current))
+        await cloud.upsertProfile(supabase, user.id, profileRef.current);
+
+      const dbBasket = await cloud.fetchBasket(supabase, user.id);
+      if (cancelled) return;
+      if (dbBasket && dbBasket.length) basketStore.replace(dbBasket);
+      else if (basketStore.snapshot().length)
+        await cloud.upsertBasket(supabase, user.id, basketStore.snapshot());
+
+      if (!cancelled) await refreshConversations();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, supabase, update, refreshConversations]);
+
+  // --- write-through profile + basket changes while signed in (debounced) ---
+  React.useEffect(() => {
+    if (!user) return;
+    const t = setTimeout(() => void cloud.upsertProfile(supabase, user.id, profile), 700);
+    return () => clearTimeout(t);
+  }, [profile, user, supabase]);
+
+  React.useEffect(() => {
+    if (!user) return;
+    const t = setTimeout(() => void cloud.upsertBasket(supabase, user.id, basketItems), 700);
+    return () => clearTimeout(t);
+  }, [basketItems, user, supabase]);
+
+  // --- persist each completed turn (messages + orders) for signed-in users ---
+  React.useEffect(() => {
+    if (status !== "ready" || !user) return;
+    const msgs = messagesRef.current;
+    const unsaved = msgs.filter(
+      (m) => (m.role === "user" || m.role === "assistant") && !savedIds.current.has(m.id),
+    );
+    if (unsaved.length === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      let convId = conversationIdRef.current;
+      if (!convId) {
+        convId = await cloud.createConversation(supabase, user.id, firstUserText(msgs));
+        if (!convId || cancelled) return;
+        conversationIdRef.current = convId;
+        setConversationId(convId);
+      }
+      await cloud.saveMessages(supabase, convId, user.id, unsaved);
+      for (const m of unsaved) savedIds.current.add(m.id);
+      for (const o of cloud.ordersFromMessages(unsaved)) {
+        await cloud.saveOrder(supabase, user.id, convId, o);
+      }
+      await cloud.touchConversation(supabase, convId);
+      if (!cancelled) await refreshConversations();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [status, user, supabase, refreshConversations]);
+
+  // --- chat actions ---
+  const newChat = React.useCallback(() => {
+    stop();
+    setMessages([]);
+    setConversationId(null);
+    conversationIdRef.current = null;
+  }, [stop, setMessages]);
+
+  const selectConversation = React.useCallback(
+    async (id: string) => {
+      const loaded = await cloud.loadMessages(supabase, id);
+      for (const m of loaded) savedIds.current.add(m.id);
+      setMessages(loaded);
+      setConversationId(id);
+      conversationIdRef.current = id;
+    },
+    [supabase, setMessages],
+  );
+
+  const removeConversation = React.useCallback(
+    async (id: string) => {
+      await cloud.deleteConversation(supabase, id);
+      if (id === conversationIdRef.current) newChat();
+      await refreshConversations();
+    },
+    [supabase, newChat, refreshConversations],
   );
 
   // Keep the latest turn in view while content streams in.
@@ -69,10 +206,32 @@ export function AuraChat() {
 
   return (
     <div className="relative flex min-h-dvh flex-col">
+      <LeftSidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        user={user}
+        conversations={conversations}
+        activeId={conversationId}
+        onNewChat={newChat}
+        onSelect={selectConversation}
+        onDelete={removeConversation}
+        onSignIn={() => setSignInOpen(true)}
+        onSignOut={signOut}
+      />
+      <SignInDialog open={signInOpen} onClose={() => setSignInOpen(false)} />
+
       {/* Header */}
       <header className="glass sticky top-0 z-30 border-b border-border/70">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-3 sm:px-8">
           <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              aria-label="Open chats"
+              onClick={() => setSidebarOpen(true)}
+              className="grid size-9 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <PanelLeft className="size-4" />
+            </button>
             <div className="grid size-9 place-items-center rounded-xl bg-card ring-1 ring-border">
               <AuraMark className="size-5" />
             </div>
@@ -87,7 +246,7 @@ export function AuraChat() {
             {!empty && (
               <button
                 type="button"
-                onClick={() => setMessages([])}
+                onClick={newChat}
                 className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               >
                 <RotateCcw className="size-3.5" /> New chat
