@@ -1,0 +1,152 @@
+"use client";
+
+import { motion } from "motion/react";
+import {
+  Loader2,
+  Search,
+  PackageSearch,
+  LayoutGrid,
+  MapPin,
+  Truck,
+  Receipt,
+  PackageCheck,
+  SearchX,
+  AlertTriangle,
+} from "lucide-react";
+import { ProductCarousel } from "./product-carousel";
+import { ProductDetail } from "./product-detail";
+import { CategoryGrid } from "./category-grid";
+import { DeliveryCard } from "./delivery-result";
+import { CheckoutCard } from "./checkout-card";
+import { OrderTrackingCard } from "./order-tracking";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+type ToolPartLike = {
+  type: string;
+  state: "input-streaming" | "input-available" | "output-available" | "output-error";
+  input?: any;
+  output?: any;
+  errorText?: string;
+};
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+const LABELS: Record<string, { icon: React.ElementType; verb: string }> = {
+  "tool-searchProducts": { icon: Search, verb: "Searching Kapruka" },
+  "tool-getProduct": { icon: PackageSearch, verb: "Fetching the details" },
+  "tool-listCategories": { icon: LayoutGrid, verb: "Gathering categories" },
+  "tool-listDeliveryCities": { icon: MapPin, verb: "Looking up cities" },
+  "tool-checkDelivery": { icon: Truck, verb: "Checking delivery" },
+  "tool-createOrder": { icon: Receipt, verb: "Preparing your secure checkout" },
+  "tool-trackOrder": { icon: PackageCheck, verb: "Tracking your order" },
+};
+
+function ToolStatus({ type, query }: { type: string; query?: string }) {
+  const meta = LABELS[type] ?? { icon: Loader2, verb: "Working" };
+  const Icon = meta.icon;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3.5 py-2 text-sm text-muted-foreground"
+    >
+      <Icon className="size-4 text-gold" />
+      <span>
+        {meta.verb}
+        {query ? <span className="text-foreground"> · “{query}”</span> : null}
+      </span>
+      <Loader2 className="size-3.5 animate-spin text-gold" />
+    </motion.div>
+  );
+}
+
+function Notice({ icon: Icon, children }: { icon: React.ElementType; children: React.ReactNode }) {
+  return (
+    <div className="inline-flex items-start gap-2 rounded-xl border border-border bg-muted/50 px-3.5 py-2.5 text-sm text-muted-foreground">
+      <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+      <span>{children}</span>
+    </div>
+  );
+}
+
+export function ToolPart({
+  part,
+  onAsk,
+}: {
+  part: ToolPartLike;
+  onAsk?: (text: string) => void;
+}) {
+  const { type, state } = part;
+
+  if (state === "input-streaming" || state === "input-available") {
+    return <ToolStatus type={type} query={part.input?.q} />;
+  }
+
+  if (state === "output-error") {
+    return (
+      <Notice icon={AlertTriangle}>
+        {part.errorText || "That didn't go through. Want me to try again?"}
+      </Notice>
+    );
+  }
+
+  const out = part.output ?? {};
+  // Every fetcher degrades to { error } — surface it warmly.
+  if (out.error) return <Notice icon={AlertTriangle}>{out.error}</Notice>;
+
+  switch (type) {
+    case "tool-searchProducts": {
+      const products = out.products ?? [];
+      const ctx = out.deliveryContext;
+      if (products.length === 0) {
+        // Delivery-aware search where everything was filtered out as undeliverable.
+        if (ctx && ctx.hiddenCount > 0) {
+          return (
+            <Notice icon={Truck}>
+              Nothing for “{out.query}” can reach {ctx.city}
+              {ctx.dateLabel ? ` by ${ctx.dateLabel}` : ""} in time
+              {ctx.nextAvailableDate ? ` (next available ${ctx.nextAvailableDate})` : ""}. Want me
+              to look at a later date, or items that travel better?
+            </Notice>
+          );
+        }
+        return (
+          <Notice icon={SearchX}>
+            I couldn’t find anything for “{out.query}”. Want me to try a different style, or
+            browse a category?
+          </Notice>
+        );
+      }
+      return <ProductCarousel products={products} deliveryContext={ctx} onAsk={onAsk} />;
+    }
+    case "tool-getProduct":
+      return out.product ? <ProductDetail product={out.product} onAsk={onAsk} /> : null;
+    case "tool-listCategories":
+      return <CategoryGrid categories={out.categories ?? []} onAsk={onAsk} />;
+    case "tool-listDeliveryCities": {
+      const cities = out.cities ?? [];
+      if (cities.length === 0) return <Notice icon={MapPin}>No matching delivery cities.</Notice>;
+      return (
+        <div className="flex max-w-md flex-wrap gap-2">
+          {cities.map((c: { name: string }) => (
+            <button
+              key={c.name}
+              type="button"
+              onClick={() => onAsk?.(`Check delivery to ${c.name}.`)}
+              className="rounded-full border border-border bg-card px-3 py-1.5 text-sm text-card-foreground transition-colors hover:border-gold/40 hover:bg-gold/5"
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+      );
+    }
+    case "tool-checkDelivery":
+      return out.city ? <DeliveryCard result={out} /> : null;
+    case "tool-createOrder":
+      return out.checkoutUrl ? <CheckoutCard order={out} /> : null;
+    case "tool-trackOrder":
+      return out.orderNumber ? <OrderTrackingCard tracking={out} /> : null;
+    default:
+      return null;
+  }
+}

@@ -1,0 +1,227 @@
+{
+  "/home/zayan/Documents/myProjects/project-aura/app/api/chat/route.ts": {
+    "mtime": 1781124614.333957,
+    "ast_hash": "84255d0f096f81fe3ae17963433a6b57",
+    "semantic_hash": "84255d0f096f81fe3ae17963433a6b57"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/app/layout.tsx": {
+    "mtime": 1781124165.317745,
+    "ast_hash": "dbc865f8f573dbe12a19531f632c46a8",
+    "semantic_hash": "dbc865f8f573dbe12a19531f632c46a8"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/app/page.tsx": {
+    "mtime": 1781124051.748631,
+    "ast_hash": "8ffd0ad0342ed375ebf17eeade2ade67",
+    "semantic_hash": "8ffd0ad0342ed375ebf17eeade2ade67"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/components.json": {
+    "mtime": 1781117370.8309937,
+    "ast_hash": "7891581c1d42b2a9024a5179b3e800fb",
+    "semantic_hash": "7891581c1d42b2a9024a5179b3e800fb"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/components/aura/aura-chat.tsx": {
+    "mtime": 1781124145.2905505,
+    "ast_hash": "25ff4f5006843454d77865772a246bb5",
+    "semantic_hash": "25ff4f5006843454d77865772a246bb5"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/components/aura/aura-mark.tsx": {
+    "mtime": 1781123965.7247677,
+    "ast_hash": "7c52f5e51fcba5797f90e9686f55d018",
+    "semantic_hash": "7c52f5e51fcba5797f90e9686f55d018"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/components/aura/category-grid.tsx": {
+    "mtime": 1781123839.7204654,
+    "ast_hash": "d4747b28f983c6de0d22168faf8be4a2",
+    "semantic_hash": "d4747b28f983c6de0d22168faf8be4a2"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/components/aura/checkout-card.tsx": {
+    "mtime": 1781123872.3978078,
+    "ast_hash": "0e5dd8da98d037e8ba162b0aeab2216e",
+    "semantic_hash": "0e5dd8da98d037e8ba162b0aeab2216e"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/components/aura/composer.tsx": {
+    "mtime": 1781123995.7700713,
+    "ast_hash": "62b5f1e65c3fc6b1452bafc786891575",
+    "semantic_hash": "62b5f1e65c3fc6b1452bafc786891575"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/components/aura/delivery-result.tsx": {
+    "mtime": 1781123854.5556214,
+    "ast_hash": "ff6df82b6144e4963a7fd82a93d4cf7d",
+    "semantic_hash": "ff6df82b6144e4963a7fd82a93d4cf7d"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/components/aura/hero.tsx": {
+    "mtime": 1781124014.941264,
+    "ast_hash": "722ce866c8f5070d3b5f59439105edf2",
+    "semantic_hash": "722ce866c8f5070d3b5f59439105edf2"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/components/aura/markdown.tsx": {
+    "mtime": 1781124634.9511452,
+    "ast_hash": "bafbc5ec659139b4d3c9b24b28d222b7",
+    "semantic_hash": "bafbc5ec659139b4d3c9b24b28d222b7"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/components/aura/message.tsx": {
+    "mtime": 1781124645.4162407,
+    "ast_hash": "ec8ccdc55bfa7a839508d74c1b8733e6",
+    "semantic_hash": "ec8ccdc55bfa7a839508d74c1b8733e6"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/components/aura/order-tracking.tsx": {
+    "mtime": 1781123888.4979753,
+    "ast_hash": "d2425ee2e60a82ee05bb791d319f6a3a",
+    "semantic_hash": "d2425ee2e60a82ee05bb791d319f6a3a"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/components/aura/product-card.tsx": {
+    "mtime": 1781123795.5769968,
+    "ast_hash": "501e37d07db7a10984caffad1dee7b81",
+    "semantic_hash": "501e37d07db7a10984caffad1dee7b81"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/components/aura/product-carousel.tsx": {
+    "mtime": 1781123825.5853162,
+    "ast_hash": "b15500c19800ec31eed04fc5d6f0e58b",
+    "semantic_hash": "b15500c19800ec31eed04fc5d6f0e58b"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/components/aura/product-detail.tsx": {
+    "mtime": 1781123922.1213224,
+    "ast_hash": "afcb660091b9fcece7ce471a5d3540ba",
+    "semantic_hash": "afcb660091b9fcece7ce471a5d3540ba"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/components/aura/product-image.tsx": {
+    "mtime": 1781123779.379823,
+    "ast_hash": "a85a285642e0607efc3d5b3a935b6b1c",
+    "semantic_hash": "a85a285642e0607efc3d5b3a935b6b1c"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/components/aura/tool-part.tsx": {
+    "mtime": 1781123945.8435652,
+    "ast_hash": "ef0f71424e8eb272f5239fb80d5c80b7",
+    "semantic_hash": "ef0f71424e8eb272f5239fb80d5c80b7"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/components/aura/typing.tsx": {
+    "mtime": 1781123957.1006799,
+    "ast_hash": "b73aeb7cb8b4701a5fc6328c9d2e2445",
+    "semantic_hash": "b73aeb7cb8b4701a5fc6328c9d2e2445"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/components/ui/badge.tsx": {
+    "mtime": 1781123761.145626,
+    "ast_hash": "60eabd096ec5188b4a7348de0a06da6a",
+    "semantic_hash": "60eabd096ec5188b4a7348de0a06da6a"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/components/ui/button.tsx": {
+    "mtime": 1781117380.515172,
+    "ast_hash": "0a28b77f2b1e577cfdb80b2404927325",
+    "semantic_hash": "0a28b77f2b1e577cfdb80b2404927325"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/components/ui/carousel.tsx": {
+    "mtime": 1781124150.0535967,
+    "ast_hash": "4bb8a64e5cae2e8565f31098fe9d146d",
+    "semantic_hash": "4bb8a64e5cae2e8565f31098fe9d146d"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/components/ui/skeleton.tsx": {
+    "mtime": 1781123765.7176754,
+    "ast_hash": "75541ce389bcc59f04bd2dbfead0142f",
+    "semantic_hash": "75541ce389bcc59f04bd2dbfead0142f"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/eslint.config.mjs": {
+    "mtime": 1781116764.779971,
+    "ast_hash": "dfa1f5f6a7037bf39dc510f30b180002",
+    "semantic_hash": "dfa1f5f6a7037bf39dc510f30b180002"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/lib/ai-types.ts": {
+    "mtime": 1781123603.5928628,
+    "ast_hash": "ce4a685be110d8f4649de95a351214bc",
+    "semantic_hash": "ce4a685be110d8f4649de95a351214bc"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/lib/format.ts": {
+    "mtime": 1781123753.8185465,
+    "ast_hash": "e980ef5fea5586afb25e55e24228cb13",
+    "semantic_hash": "e980ef5fea5586afb25e55e24228cb13"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/lib/kapruka.ts": {
+    "mtime": 1781124135.176452,
+    "ast_hash": "88f307d9b08c2a52b9218d2a7a4144a3",
+    "semantic_hash": "88f307d9b08c2a52b9218d2a7a4144a3"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/lib/tools.ts": {
+    "mtime": 1781123587.3836744,
+    "ast_hash": "e564d89f1359517f3244094a6dd73c76",
+    "semantic_hash": "e564d89f1359517f3244094a6dd73c76"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/lib/utils.ts": {
+    "mtime": 1781117328.4631956,
+    "ast_hash": "5a6fd53fdcf2be529e9cc0b718fde352",
+    "semantic_hash": "5a6fd53fdcf2be529e9cc0b718fde352"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/next.config.ts": {
+    "mtime": 1781116764.7800653,
+    "ast_hash": "9b77af189a21a7a64e4bd7a426f64176",
+    "semantic_hash": "9b77af189a21a7a64e4bd7a426f64176"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/package.json": {
+    "mtime": 1781123458.2271142,
+    "ast_hash": "2cec9ec5ec6fa7acb0cad3962f8fec7b",
+    "semantic_hash": "2cec9ec5ec6fa7acb0cad3962f8fec7b"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/postcss.config.mjs": {
+    "mtime": 1781116764.7800472,
+    "ast_hash": "239f3ebf717465dc636818a1a619398d",
+    "semantic_hash": "239f3ebf717465dc636818a1a619398d"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/test-mcp.ts": {
+    "mtime": 1781121838.9284585,
+    "ast_hash": "a9f06f6ef933be81d3d620f76d704ff5",
+    "semantic_hash": "a9f06f6ef933be81d3d620f76d704ff5"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/tsconfig.json": {
+    "mtime": 1781116764.7813118,
+    "ast_hash": "02fc19ad21338c2ab820a70136310db4",
+    "semantic_hash": "02fc19ad21338c2ab820a70136310db4"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/AGENTS.md": {
+    "mtime": 1781116816.2116609,
+    "ast_hash": "9e09241799026ac05be315a2f0b50055",
+    "semantic_hash": "9e09241799026ac05be315a2f0b50055"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/CLAUDE.md": {
+    "mtime": 1781124856.4511514,
+    "ast_hash": "105aea0e7ebf063450cfae7f2ef1e1b2",
+    "semantic_hash": "105aea0e7ebf063450cfae7f2ef1e1b2"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/Kapruka Challenge Idea Generation.md": {
+    "mtime": 1781125818.8369997,
+    "ast_hash": "4af18c7b876388f4ca8d50ba42ea8fa5",
+    "semantic_hash": "4af18c7b876388f4ca8d50ba42ea8fa5"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/README.md": {
+    "mtime": 1781116764.7798312,
+    "ast_hash": "f15aaa42d5d299d091b1171097ea56ad",
+    "semantic_hash": "f15aaa42d5d299d091b1171097ea56ad"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/pnpm-workspace.yaml": {
+    "mtime": 1781116978.9341655,
+    "ast_hash": "73f61aa55c13a5053638ede620261994",
+    "semantic_hash": "73f61aa55c13a5053638ede620261994"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/public/file.svg": {
+    "mtime": 1781116764.7798312,
+    "ast_hash": "d09f95206c3fa0bb9bd9fefabfd0ea71",
+    "semantic_hash": "d09f95206c3fa0bb9bd9fefabfd0ea71"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/public/globe.svg": {
+    "mtime": 1781116764.7801385,
+    "ast_hash": "2aaafa6a49b6563925fe440891e32717",
+    "semantic_hash": "2aaafa6a49b6563925fe440891e32717"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/public/next.svg": {
+    "mtime": 1781116764.7801385,
+    "ast_hash": "8e061864f388b47f33a1c3780831193e",
+    "semantic_hash": "8e061864f388b47f33a1c3780831193e"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/public/vercel.svg": {
+    "mtime": 1781116764.7801778,
+    "ast_hash": "c0af2f507b369b085b35ef4bbe3bcf1e",
+    "semantic_hash": "c0af2f507b369b085b35ef4bbe3bcf1e"
+  },
+  "/home/zayan/Documents/myProjects/project-aura/public/window.svg": {
+    "mtime": 1781116764.780234,
+    "ast_hash": "a2760511c65806022ad20adf74370ff3",
+    "semantic_hash": "a2760511c65806022ad20adf74370ff3"
+  }
+}
