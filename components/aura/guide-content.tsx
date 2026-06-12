@@ -251,7 +251,7 @@ export function GuideContent() {
         {/* Search by photo highlight */}
         <section className="py-12">
           <Reveal>
-            <div className="grid gap-6 overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-gold/[0.08] via-card/40 to-jade/[0.06] p-6 sm:p-8 lg:grid-cols-2 lg:items-center">
+            <div className="grid grid-cols-1 gap-6 overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-gold/[0.08] via-card/40 to-jade/[0.06] p-6 sm:p-8 lg:grid-cols-2 lg:items-center">
               <div>
                 <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-gold/12 px-2.5 py-1 text-[0.7rem] font-semibold uppercase tracking-widest text-gold">
                   <Sparkles className="size-3" /> New
@@ -315,7 +315,7 @@ export function GuideContent() {
             </p>
           </Reveal>
 
-          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Reveal>
               <DemoCard caption="Everyday shopping">
                 <UserBubble>Need good wireless headphones, delivered to Colombo</UserBubble>

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion } from "motion/react";
-import { ArrowUpRight, BadgeCheck, Truck, Plus, Check } from "lucide-react";
+import { ArrowUpRight, BadgeCheck, Truck, Plus, Check, Sparkles } from "lucide-react";
 import type { Product, DeliveryStatus } from "@/lib/kapruka";
 import { formatMoney, discountPct } from "@/lib/format";
 import { ProductImage } from "./product-image";
@@ -47,7 +47,10 @@ export function ProductCard({
     window.setTimeout(() => setAdded(false), 1400);
   };
 
-  const details = () => onAsk?.(`Tell me more about "${product.name}".`);
+  const details = () =>
+    onAsk?.(
+      `Tell me more about "${product.name}" — what it is, what makes it special, and who it's a good fit for.`,
+    );
 
   return (
     <motion.article
@@ -110,13 +113,13 @@ export function ProductCard({
           )}
         </div>
 
-        <div className="mt-2 flex items-center gap-2">
+        <div className="mt-2 flex flex-col gap-2">
           <button
             type="button"
             onClick={addToBasket}
             aria-label={`Add ${product.name} to basket`}
             className={cn(
-              "flex flex-1 items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold tracking-wide transition-colors",
+              "flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-3 py-2 text-xs font-semibold tracking-wide transition-colors",
               added
                 ? "bg-jade/15 text-jade"
                 : "bg-gold text-gold-foreground hover:brightness-105",
@@ -132,15 +135,25 @@ export function ProductCard({
               </>
             )}
           </button>
-          <a
-            href={product.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Open ${product.name} on Kapruka`}
-            className="grid size-9 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <ArrowUpRight className="size-4" />
-          </a>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={details}
+              aria-label={`Tell me more about ${product.name}`}
+              className="flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-border px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <Sparkles className="size-3.5" /> Tell me more
+            </button>
+            <a
+              href={product.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Open ${product.name} on Kapruka`}
+              className="grid size-9 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <ArrowUpRight className="size-4" />
+            </a>
+          </div>
         </div>
       </div>
     </motion.article>

@@ -41,7 +41,7 @@ function ThemeToggle() {
           return !d;
         });
       }}
-      className="grid size-9 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      className="grid size-9 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
     >
       {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
     </button>
@@ -229,34 +229,36 @@ export function AuraChat() {
 
       {/* Header */}
       <header className="glass sticky top-0 z-30 border-b border-border/70">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-3 sm:px-8">
-          <div className="flex items-center gap-2.5">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-2 px-4 py-3 sm:px-8">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
             <button
               type="button"
               aria-label="Open chats"
               onClick={() => setSidebarOpen(true)}
-              className="grid size-9 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="grid size-9 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               <PanelLeft className="size-4" />
             </button>
-            <div className="grid size-9 place-items-center rounded-xl bg-card ring-1 ring-border">
+            <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-card ring-1 ring-border">
               <AuraMark className="size-5" />
             </div>
-            <div className="leading-none">
+            <div className="min-w-0 leading-none">
               <p className="font-heading text-lg text-foreground">Aura</p>
-              <p className="text-[0.7rem] tracking-wide text-muted-foreground">
+              <p className="hidden truncate text-[0.7rem] tracking-wide text-muted-foreground sm:block">
                 Kapruka concierge
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             {!empty && (
               <button
                 type="button"
                 onClick={newChat}
-                className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                aria-label="New chat"
+                className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-border px-2.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-3"
               >
-                <RotateCcw className="size-3.5" /> New chat
+                <RotateCcw className="size-3.5" />
+                <span className="hidden sm:inline">New chat</span>
               </button>
             )}
             <ThemeToggle />

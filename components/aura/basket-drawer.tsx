@@ -49,7 +49,7 @@ export function BasketDrawer({ onCheckout }: { onCheckout: (message: string) => 
         type="button"
         aria-label={`Basket${count ? ` (${count})` : ""}`}
         onClick={() => setOpen(true)}
-        className="relative grid size-9 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className="relative grid size-9 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
       >
         <ShoppingBag className="size-4" />
         {count > 0 && (

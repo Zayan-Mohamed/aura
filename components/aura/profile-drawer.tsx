@@ -82,7 +82,7 @@ export function ProfileDrawer({
         aria-label="Your details & guide"
         aria-expanded={open}
         onClick={() => setOpen(true)}
-        className="relative grid size-9 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className="relative grid size-9 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
       >
         <Menu className="size-4" />
         {/* A subtle dot signals saved details without opening the drawer. */}

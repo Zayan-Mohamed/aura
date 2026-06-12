@@ -81,7 +81,7 @@ export function ProductCarousel({
   // A single result reads better as one anchored card than a lonely slide.
   if (products.length === 1) {
     return (
-      <div className="max-w-[280px]">
+      <div className="w-full max-w-[280px]">
         {deliveryContext && <DeliveryConfidenceBanner ctx={deliveryContext} />}
         <ProductCard product={products[0]} onAsk={onAsk} />
       </div>
@@ -89,7 +89,10 @@ export function ProductCarousel({
   }
 
   return (
-    <Carousel opts={{ align: "start", dragFree: true, containScroll: "trimSnaps" }}>
+    <Carousel
+      className="w-full min-w-0"
+      opts={{ align: "start", dragFree: true, containScroll: "trimSnaps" }}
+    >
       {deliveryContext && <DeliveryConfidenceBanner ctx={deliveryContext} />}
       <div className="mb-3 flex items-end justify-between gap-3">
         <p className="text-sm text-muted-foreground">
@@ -104,7 +107,7 @@ export function ProductCarousel({
         {products.map((product, i) => (
           <CarouselItem
             key={product.id || i}
-            className="basis-[76%] pl-3 sm:basis-1/2 lg:basis-1/3 xl:basis-1/4"
+            className="basis-[86%] pl-3 sm:basis-1/2 lg:basis-1/3 xl:basis-1/4"
           >
             <motion.div
               initial={{ opacity: 0, y: 14 }}
