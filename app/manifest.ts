@@ -3,10 +3,10 @@ import { BRAND } from "@/lib/brand-icon";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Aura — your shopping concierge",
+    name: "Aura - your shopping concierge",
     short_name: "Aura",
     description:
-      "A warm, visual AI concierge for shopping on Kapruka, Sri Lanka's largest store — in Sinhala, Tanglish or English.",
+      "A warm, visual AI concierge for shopping on Kapruka, Sri Lanka's largest store - in Sinhala, Tanglish or English.",
     start_url: "/",
     display: "standalone",
     background_color: BRAND.bg,

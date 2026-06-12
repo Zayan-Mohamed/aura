@@ -14,7 +14,7 @@ const SUGGESTIONS = [
 
 export function Hero({ onAsk }: { onAsk: (text: string) => void }) {
   return (
-    <div className="relative mx-auto flex min-h-full max-w-full flex-col items-center justify-center px-2 py-10 text-center">
+    <div className="relative mx-auto flex min-h-full max-w-full flex-col items-center justify-center px-2 pb-28 pt-10 text-center">
       <motion.div
         initial={{ opacity: 0, scale: 0.8, rotate: -8 }}
         animate={{ opacity: 1, scale: 1, rotate: 0 }}
@@ -39,9 +39,9 @@ export function Hero({ onAsk }: { onAsk: (text: string) => void }) {
         transition={{ delay: 0.16, duration: 0.5 }}
         className="mt-4 max-w-md text-pretty text-base leading-relaxed text-muted-foreground"
       >
-        I’m Aura — your shopping concierge for Kapruka. Groceries, gadgets, a
-        gift for someone special — tell me what you need and where it’s going,
-        and I’ll make sure it actually gets there. Sinhala, Tanglish, or English.
+        I’m Aura, your shopping concierge for Kapruka. Groceries, gadgets, a
+        gift for someone special. Tell me what you need and where it’s going,
+        and I’ll make sure it actually gets there.
       </motion.p>
 
       <motion.div

@@ -9,8 +9,18 @@
 import { tool } from "ai";
 import { z } from "zod";
 import * as kapruka from "./kapruka";
+import { visualSearch } from "./visual-search";
 
-export const auraTools = {
+/**
+ * Per-request context injected into the tools. `imageDataUrl` is the shopper's
+ * uploaded photo for the current turn (set by the chat route from the request
+ * body) — the visualSearch tool reads it from here rather than from model args,
+ * since the chat model can't reliably pass image bytes.
+ */
+export type AuraToolContext = { imageDataUrl?: string };
+
+export function makeAuraTools(ctx: AuraToolContext = {}) {
+  return {
   searchProducts: tool({
     description:
       "Search Kapruka's live catalog for purchasable products by keyword — groceries, electronics, fashion, home, essentials, gifts, anything. Use this whenever the shopper wants to find, browse, or compare items. Returns product cards the UI renders as a swipeable gallery — so prefer this over describing products in text. When you know the destination city (and ideally the date), pass deliverTo/deliverBy to enable Proactive Delivery Confidence: the catalog is filtered to only what can actually arrive, each card stamped with a freshness/ETA badge.",
@@ -114,6 +124,36 @@ export const auraTools = {
     }),
     execute: async ({ orderNumber }) => kapruka.trackOrder(orderNumber),
   }),
-};
 
-export type AuraTools = typeof auraTools;
+  visualSearch: tool({
+    description:
+      "Find catalog products that VISUALLY match a photo the shopper just uploaded (an inspiration image — a cake they saw, a dress, a gadget). Call this whenever an image is attached this turn; do NOT ask them to describe it. Embeds the photo and ranks real Kapruka products by visual similarity, returning ranked cards the interface renders. Pass deliverTo/deliverBy if you already know where it's going.",
+    inputSchema: z.object({
+      // gpt-oss-120b tends to send `null` for unfilled optionals, which strict
+      // tool-schema validation rejects — accept nullish and coerce below.
+      hint: z
+        .string()
+        .nullish()
+        .describe("Any words the shopper typed alongside the image (budget, occasion, colour)."),
+      deliverTo: z.string().nullish().describe("Destination city, if known, for delivery confidence."),
+      deliverBy: z.string().nullish().describe("Target delivery date YYYY-MM-DD, if known."),
+    }),
+    execute: async ({ hint, deliverTo, deliverBy }) => {
+      if (!ctx.imageDataUrl) {
+        return { error: "No image was attached this turn — ask the shopper to upload one." };
+      }
+      return visualSearch({
+        imageDataUrl: ctx.imageDataUrl,
+        hint: hint ?? undefined,
+        deliverTo: deliverTo ?? undefined,
+        deliverBy: deliverBy ?? undefined,
+      });
+    },
+  }),
+  };
+}
+
+/** Image-less tool set — used only for client-side type inference. */
+export const auraTools = makeAuraTools();
+
+export type AuraTools = ReturnType<typeof makeAuraTools>;

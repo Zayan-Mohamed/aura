@@ -12,6 +12,7 @@ import {
   PackageCheck,
   SearchX,
   AlertTriangle,
+  Sparkles,
 } from "lucide-react";
 import { ProductCarousel } from "./product-carousel";
 import { ProductDetail } from "./product-detail";
@@ -38,6 +39,7 @@ const LABELS: Record<string, { icon: React.ElementType; verb: string }> = {
   "tool-checkDelivery": { icon: Truck, verb: "Checking delivery" },
   "tool-createOrder": { icon: Receipt, verb: "Preparing your secure checkout" },
   "tool-trackOrder": { icon: PackageCheck, verb: "Tracking your order" },
+  "tool-visualSearch": { icon: Sparkles, verb: "Matching your photo" },
 };
 
 function ToolStatus({ type, query }: { type: string; query?: string }) {
@@ -146,6 +148,39 @@ export function ToolPart({
       return out.checkoutUrl ? <CheckoutCard order={out} /> : null;
     case "tool-trackOrder":
       return out.orderNumber ? <OrderTrackingCard tracking={out} /> : null;
+    case "tool-visualSearch": {
+      const products = out.products ?? [];
+      if (products.length === 0) {
+        return (
+          <Notice icon={SearchX}>
+            I couldn’t find a visual match for that photo. Want to describe it in words instead?
+          </Notice>
+        );
+      }
+      const verdict = out.verdict as string;
+      const title =
+        verdict === "exact"
+          ? "Found your match"
+          : verdict === "similar"
+            ? "Closest visual matches"
+            : "Visually similar finds";
+      const pct = Math.round((out.topScore ?? 0) * 100);
+      return (
+        <div className="flex flex-col gap-2">
+          <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-gold/30 bg-gold/[0.06] px-3 py-1 text-xs font-medium text-foreground">
+            <Sparkles className="size-3.5 text-gold" />
+            {title}
+            {pct ? <span className="text-muted-foreground">· {pct}% match</span> : null}
+          </span>
+          <ProductCarousel
+            products={products}
+            deliveryContext={out.deliveryContext}
+            title={out.caption ? `Closest to your “${out.caption}”` : undefined}
+            onAsk={onAsk}
+          />
+        </div>
+      );
+    }
     default:
       return null;
   }

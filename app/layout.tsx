@@ -20,12 +20,12 @@ const geistMono = Geist_Mono({
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 const DESCRIPTION =
-  "Aura is a warm, witty AI concierge for Kapruka, Sri Lanka's largest store. Groceries, gadgets, daily essentials or a gift — in Sinhala, Tanglish or English. It checks delivery before you fall in love with anything, then does click-to-pay checkout, all in one conversation.";
+  "Aura is a warm, witty AI concierge for Kapruka, Sri Lanka's largest store. Groceries, gadgets, daily essentials or a gift - in Sinhala, Tanglish or English. It checks delivery before you fall in love with anything, then does click-to-pay checkout, all in one conversation.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Aura — your shopping concierge",
+    default: "Aura - your shopping concierge",
     template: "%s · Aura",
   },
   description: DESCRIPTION,
@@ -46,14 +46,14 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "Aura",
-    title: "Aura — your shopping concierge for Sri Lanka",
+    title: "Aura - your shopping concierge for Sri Lanka",
     description: DESCRIPTION,
     locale: "en_LK",
     url: "/",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Aura — your shopping concierge for Sri Lanka",
+    title: "Aura - your shopping concierge for Sri Lanka",
     description: DESCRIPTION,
   },
   appleWebApp: {

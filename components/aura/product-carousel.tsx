@@ -32,7 +32,7 @@ function DeliveryConfidenceBanner({ ctx }: { ctx: DeliveryContext }) {
       {ctx.hiddenCount > 0 && (
         <span className="inline-flex items-center gap-1.5 text-muted-foreground">
           <EyeOff className="size-3.5" />
-          {ctx.hiddenCount} hidden — can’t arrive in time
+          {ctx.hiddenCount} hidden - can’t arrive in time
         </span>
       )}
     </motion.div>

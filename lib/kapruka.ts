@@ -392,31 +392,96 @@ async function annotateDelivery(
   };
 }
 
+// --- Query Relaxation -------------------------------------------------------
+// Kapruka's search matches keywords fairly strictly, so an over-specific phrase
+// ("chocolate birthday cake") can return zero results while the head noun
+// ("cake") returns plenty. We fall back to progressively broader queries, then
+// locally re-rank the broad set by the dropped terms so the closest items lead.
+
+const STOPWORDS = new Set([
+  "a", "an", "the", "some", "any", "for", "with", "of", "to", "my", "me", "i",
+  "please", "want", "need", "looking", "good", "nice", "best", "buy", "get",
+  "show", "find", "under", "below", "cheap", "and", "or",
+]);
+
+/** Progressively broader fallback queries, broadest last (head noun trails in English). */
+function relaxQueries(q: string): string[] {
+  const words = q.trim().split(/\s+/).filter(Boolean);
+  if (words.length <= 1) return [];
+  const out: string[] = [];
+  if (words.length >= 3) out.push(words.slice(-2).join(" ")); // last two words
+  out.push(words[words.length - 1]); // head noun
+  // Also try the most "contentful" single word (longest non-stopword) as a hail-mary.
+  const content = words
+    .filter((w) => !STOPWORDS.has(w.toLowerCase()) && w.length > 2)
+    .sort((a, b) => b.length - a.length)[0];
+  if (content) out.push(content);
+  return [...new Set(out.map((s) => s.toLowerCase()))].filter((f) => f !== q.toLowerCase());
+}
+
+/** Re-rank a broad result set so items matching the user's specific terms lead. */
+function rankByTerms(products: Product[], terms: string[]): Product[] {
+  const t = terms.map((x) => x.toLowerCase()).filter((x) => x.length > 2 && !STOPWORDS.has(x));
+  if (!t.length) return products;
+  const scored = products.map((p, i) => {
+    const hay = `${p.name} ${p.description ?? ""} ${p.categoryName ?? ""}`.toLowerCase();
+    return { p, i, hits: t.filter((term) => hay.includes(term)).length };
+  });
+  // Stable sort: more term-hits first, original order as tiebreak.
+  return scored.sort((a, b) => b.hits - a.hits || a.i - b.i).map((s) => s.p);
+}
+
+async function rawSearch(args: SearchArgs, q: string): Promise<Product[] | null> {
+  const data = (await cachedCall("kapruka_search_products", {
+    q,
+    category: args.category ?? null,
+    limit: Math.min(args.limit ?? 8, 12),
+    min_price: args.minPrice ?? null,
+    max_price: args.maxPrice ?? null,
+    sort: args.sort ?? "relevance",
+    currency: args.currency ?? "LKR",
+    response_format: "json",
+  })) as any;
+  if (typeof data === "string") return null; // "No products found ..."
+  const results = Array.isArray(data?.results) ? data.results : [];
+  return results.map(normalizeProduct) as Product[];
+}
+
 export async function searchProducts(
   args: SearchArgs,
-): Promise<Failable<{ products: Product[]; query: string; deliveryContext?: DeliveryContext }>> {
+): Promise<
+  Failable<{
+    products: Product[];
+    query: string;
+    deliveryContext?: DeliveryContext;
+    relaxed?: boolean;
+    effectiveQuery?: string;
+  }>
+> {
   try {
-    const data = (await cachedCall("kapruka_search_products", {
-      q: args.q,
-      category: args.category ?? null,
-      limit: Math.min(args.limit ?? 8, 12),
-      min_price: args.minPrice ?? null,
-      max_price: args.maxPrice ?? null,
-      sort: args.sort ?? "relevance",
-      currency: args.currency ?? "LKR",
-      response_format: "json",
-    })) as any;
+    let products = (await rawSearch(args, args.q)) ?? [];
+    let effectiveQuery = args.q;
+    let relaxed = false;
 
-    if (typeof data === "string") {
-      // e.g. "No products found for 'x'."
-      return { products: [], query: args.q };
+    // Nothing for the exact phrase → walk progressively broader queries.
+    if (products.length === 0) {
+      for (const fallback of relaxQueries(args.q)) {
+        const broad = await rawSearch(args, fallback);
+        if (broad && broad.length) {
+          // Surface the items closest to what they actually asked for.
+          products = rankByTerms(broad, args.q.split(/\s+/));
+          effectiveQuery = fallback;
+          relaxed = true;
+          break;
+        }
+      }
     }
-    const results = Array.isArray(data?.results) ? data.results : [];
-    const products = results.map(normalizeProduct);
+
+    if (products.length === 0) return { products: [], query: args.q };
 
     // Proactive Delivery Confidence: when a destination is known, only surface
     // what can actually arrive, each stamped with a freshness/ETA verdict.
-    if (args.deliverTo && products.length > 0) {
+    if (args.deliverTo) {
       const annotated = await annotateDelivery(
         products,
         args.deliverTo,
@@ -424,11 +489,17 @@ export async function searchProducts(
         args.currency ?? "LKR",
       );
       if (annotated) {
-        return { products: annotated.products, query: args.q, deliveryContext: annotated.context };
+        return {
+          products: annotated.products,
+          query: args.q,
+          deliveryContext: annotated.context,
+          relaxed,
+          effectiveQuery,
+        };
       }
     }
 
-    return { products, query: args.q };
+    return { products, query: args.q, relaxed, effectiveQuery };
   } catch (err) {
     return { error: toError(err) };
   }

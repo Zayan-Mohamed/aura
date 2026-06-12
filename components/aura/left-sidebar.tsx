@@ -103,7 +103,7 @@ export function LeftSidebar({
             <div className="aura-scroll mt-3 flex-1 overflow-y-auto px-2">
               {!user ? (
                 <p className="px-3 py-6 text-center text-xs leading-relaxed text-muted-foreground">
-                  Sign in to save your chats and pick up where you left off — on any device.
+                  Sign in to save your chats and pick up where you left off - on any device.
                 </p>
               ) : conversations.length === 0 ? (
                 <p className="px-3 py-6 text-center text-xs text-muted-foreground">

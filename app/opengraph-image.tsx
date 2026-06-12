@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { auraBloomDataUrl, BRAND } from "@/lib/brand-icon";
 
 // Social share card (Open Graph + Twitter). 1200x630 is the universal size.
-export const alt = "Aura — your AI shopping concierge for Kapruka, Sri Lanka";
+export const alt = "Aura - your AI shopping concierge for Kapruka, Sri Lanka";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -35,7 +35,7 @@ export default function OpengraphImage() {
             Your shopping concierge for Sri Lanka
           </span>
           <span style={{ fontSize: 34, color: "#6B6157", maxWidth: 880, lineHeight: 1.3 }}>
-            Groceries, gadgets or a gift — found, checked for delivery, and paid.
+            Groceries, gadgets or a gift - found, checked for delivery, and paid.
             In Sinhala, Tanglish or English.
           </span>
         </div>

@@ -9,8 +9,14 @@ import type { AuraTools } from "./tools";
 
 export type AuraUITools = InferUITools<AuraTools>;
 
+/** Display-only message metadata (never sent to the model / not persisted). */
+export type AuraMessageMetadata = {
+  /** Thumbnail of a photo the shopper attached this turn (data URL). */
+  imageDataUrl?: string;
+};
+
 /** The strongly-typed message shape exchanged with the chat endpoint. */
-export type AuraUIMessage = UIMessage<never, UIDataTypes, AuraUITools>;
+export type AuraUIMessage = UIMessage<AuraMessageMetadata, UIDataTypes, AuraUITools>;
 
 /** Convenience: a tool part's `type` string, e.g. "tool-searchProducts". */
 export type AuraToolName = keyof AuraTools;

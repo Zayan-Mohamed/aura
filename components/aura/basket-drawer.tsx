@@ -105,7 +105,7 @@ export function BasketDrawer({ onCheckout }: { onCheckout: (message: string) => 
                       </div>
                       <p className="text-sm text-muted-foreground">
                         Your basket is empty. Tap <span className="font-medium text-foreground">Add to basket</span> on
-                        any product to start one — you can check out several items at once.
+                        any product to start one - you can check out several items at once.
                       </p>
                     </div>
                   ) : (

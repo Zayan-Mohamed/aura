@@ -39,7 +39,7 @@ export function ProductDetail({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 240, damping: 24 }}
-      className="grid max-w-xl gap-4 overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-sm sm:grid-cols-[minmax(0,200px)_1fr]"
+      className="grid w-full max-w-xl gap-4 overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-sm sm:grid-cols-[minmax(0,200px)_1fr]"
     >
       <div className="flex flex-col gap-2">
         <ProductImage

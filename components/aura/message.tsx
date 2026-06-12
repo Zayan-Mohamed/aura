@@ -12,7 +12,7 @@ function TextBubble({ text, role }: { text: string; role: "user" | "assistant" }
   return (
     <div
       className={cn(
-        "w-fit max-w-[42rem] rounded-2xl px-4 py-2.5 text-[0.95rem] leading-relaxed",
+        "w-fit max-w-[42rem] break-words rounded-2xl px-4 py-2.5 text-[0.95rem] leading-relaxed",
         role === "user"
           ? "ml-auto whitespace-pre-wrap rounded-br-md bg-foreground text-background"
           : "rounded-bl-md bg-card text-card-foreground shadow-sm ring-1 ring-border",
@@ -46,6 +46,16 @@ export function ChatMessage({
       )}
 
       <div className={cn("flex min-w-0 flex-1 flex-col gap-3", isUser ? "items-end" : "items-start")}>
+        {isUser && message.metadata?.imageDataUrl && (
+          <div className="overflow-hidden rounded-2xl rounded-br-md ring-1 ring-border">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={message.metadata.imageDataUrl}
+              alt="Attached photo"
+              className="max-h-56 w-auto max-w-[15rem] object-cover"
+            />
+          </div>
+        )}
         {message.parts.map((part, i) => {
           if (part.type === "text") {
             return <TextBubble key={i} text={part.text} role={isUser ? "user" : "assistant"} />;

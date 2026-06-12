@@ -19,6 +19,7 @@ import { SignInDialog } from "@/components/auth/sign-in-dialog";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useProfile, profileHasContent } from "@/lib/use-profile";
 import { useBasket, basketStore } from "@/lib/use-basket";
+import { visualSearchEnabled } from "@/lib/flags";
 import * as cloud from "@/lib/cloud";
 
 function ThemeToggle() {
@@ -67,7 +68,13 @@ export function AuraChat() {
 
   const busy = status === "submitted" || status === "streaming";
   const ask = React.useCallback(
-    (text: string) => void sendMessage({ text }, { body: { profile } }),
+    (text: string, imageDataUrl?: string) =>
+      void sendMessage(
+        imageDataUrl
+          ? { text: text || "Find me the closest match to this", metadata: { imageDataUrl } }
+          : { text },
+        { body: { profile, ...(imageDataUrl ? { imageDataUrl } : {}) } },
+      ),
     [sendMessage, profile],
   );
 
@@ -260,7 +267,7 @@ export function AuraChat() {
       </header>
 
       {/* Conversation */}
-      <main className="aura-scroll relative w-full flex-1 overflow-y-auto [scrollbar-gutter:stable_both-edges]">
+      <main className="aura-scroll relative w-full flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable_both-edges]">
         {/* Full-bleed hero glow — spans the whole viewport, not the centered column. */}
         {empty && (
           <div className="aura-radial aura-drift pointer-events-none absolute inset-x-0 top-0 -z-10 h-[55vh]" />
@@ -315,9 +322,16 @@ export function AuraChat() {
 
       {/* Composer */}
       <div className="fixed inset-x-0 bottom-0 z-30">
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-background via-background/85 to-transparent" />
         <div className="relative mx-auto w-full max-w-7xl px-5 pb-5 pt-2 sm:px-8">
-          <Composer onSend={ask} onStop={stop} busy={busy} />
+          <Composer
+            onSend={ask}
+            onStop={stop}
+            busy={busy}
+            allowImage={visualSearchEnabled}
+            imageEnabled={visualSearchEnabled && !!user}
+            onRequireAuth={() => setSignInOpen(true)}
+          />
           <p className="mt-2 text-center text-[0.7rem] text-muted-foreground/70">
             Aura shops the live Kapruka catalog · prices in LKR
           </p>

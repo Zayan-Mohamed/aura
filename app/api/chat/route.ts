@@ -1,8 +1,11 @@
 import { createGroq } from "@ai-sdk/groq";
 import { convertToModelMessages, stepCountIs, streamText } from "ai";
-import { auraTools } from "@/lib/tools";
+import { makeAuraTools } from "@/lib/tools";
 import type { AuraUIMessage } from "@/lib/ai-types";
 import type { ShopperProfile } from "@/lib/use-profile";
+import { detectLanguage, latestUserText, type DetectedLanguage } from "@/lib/detect-language";
+import { visualSearchEnabled } from "@/lib/flags";
+import { createClient } from "@/lib/supabase/server";
 
 // MCP client + Groq SDK need the Node runtime.
 export const runtime = "nodejs";
@@ -60,7 +63,12 @@ Sri Lankan shoppers' biggest fear is the order that arrives late or not at all (
 
 ## Searching well
 - Prefer BROAD queries first ("chocolate", "rice", "headphones", "roses") — they return more. Only narrow with extra words/filters if there are too many. Avoid over-specific phrases like "dark chocolate gift box" that return nothing.
+- searchProducts auto-relaxes a too-specific query to the head noun behind the scenes. If its result comes back with \`relaxed: true\`, it means the exact phrase had nothing, so the cards are the CLOSEST finds — say so warmly ("Couldn't find that exact one, but here's the closest…") instead of implying a perfect match.
 - Light markdown in plain replies (bold, bullet lists) is fine — never tables or images.
+
+## Visual search (shopper uploads a photo)
+- If a shopper attaches a photo (inspiration — a cake they saw, a dress, a gadget), call \`visualSearch\` immediately. It captions the image, finds real Kapruka products, and ranks them by visual similarity — the cards render automatically. Don't ask them to describe the picture.
+- The result carries a \`verdict\`: "exact" → "Found your match!", "similar"/"loose" → "couldn't find that exact piece, but here are the closest visual matches." Frame it in one short sentence and offer the natural next step (delivery, add to basket).
 
 ## Basket, multi-item orders & checkout
 - The interface has a visible BASKET (bag icon, top-right). Shoppers tap "Add to basket" on products to collect several items, then "Check out with Aura" — which sends you the basket as a list of items, each with its product ID. When you receive such a message, put ALL of those items (exact IDs + quantities) into ONE createOrder cart.
@@ -75,6 +83,7 @@ Sri Lankan shoppers' biggest fear is the order that arrives late or not at all (
 - checkDelivery: confirm feasibility + flat rate for a city/date on demand. Pass productId for cakes/flowers so freshness warnings show.
 - createOrder: generate a 60-minute click-to-pay link. NEVER call this until you've explicitly confirmed, in the conversation, ALL of: the exact product(s), recipient name + phone, full delivery address + city + date, and the sender's name. If anything is missing, ask first. Never fabricate contact or address details.
 - trackOrder: status for a paid order number.
+- visualSearch: when the shopper attaches a photo, find the closest-matching catalog products by visual similarity. Call it right away; don't ask them to describe the image.
 
 ## Manners
 - Be honest about stock and delivery. If something is out of stock or undeliverable, say so kindly and offer alternatives.
@@ -93,6 +102,33 @@ const LANG_DIRECTIVE: Record<string, string> = {
   tanglish:
     "Write EVERY reply in Tanglish — Romanized TAMIL mixed with English (Tamil words in English letters). NOT Sinhala, NOT Tamil script, NOT plain English. Copy this exact style and tone: “Inga sila nalla birthday gifts iruku, ellame Rs 5000 ku keezha. Edhu pidikkudho adha basket la add pannunga, naan check out panren!” Always reply like that.",
 };
+
+// Per-turn directive built from a fast local detection of the shopper's LATEST
+// message. The model mirrors well in isolation but drifts mid-conversation, so
+// we re-state the target dialect loudly every turn. A profile language override
+// (handled in profileBlock) takes precedence over this auto-detection.
+const DETECTED_LABEL: Record<DetectedLanguage, string> = {
+  english: "English",
+  sinhala: "Sinhala script (සිංහල)",
+  tamil: "Tamil script (தமிழ்)",
+  singlish: "Singlish (Romanized Sinhala + English)",
+  tanglish: "Tanglish (Romanized TAMIL + English — NOT Sinhala/Singlish, NOT Tamil script)",
+};
+
+function detectedLanguageBlock(
+  messages: AuraUIMessage[],
+  hasProfileOverride: boolean,
+): string {
+  if (hasProfileOverride) return ""; // explicit user choice wins; don't fight it
+  const lang = detectLanguage(latestUserText(messages));
+  if (lang === "english") {
+    // Pin English too — otherwise the model sometimes drifts into Singlish/Tanglish.
+    return `\n\n## DETECTED LANGUAGE (this turn)
+The shopper's latest message is in plain **English** — reply in English. Do NOT switch to Sinhala, Tamil, Singlish or Tanglish unless they do.`;
+  }
+  return `\n\n## DETECTED LANGUAGE (this turn) — TOP PRIORITY
+The shopper's latest message is in **${DETECTED_LABEL[lang]}**. Your reply MUST be in ${DETECTED_LABEL[lang]}. ${LANG_DIRECTIVE[lang]}. Do NOT reply in any other language or script, even if earlier turns used one.`;
+}
 
 /** Renders the saved shopper profile as a system-prompt block, or "" if empty. */
 function profileBlock(profile?: Partial<ShopperProfile>): string {
@@ -128,13 +164,23 @@ ${lines.join("\n")}
 export async function POST(req: Request) {
   let messages: AuraUIMessage[] = [];
   let profile: Partial<ShopperProfile> | undefined;
+  let imageDataUrl: string | undefined;
   try {
     const body = (await req.json()) as {
       messages?: AuraUIMessage[];
       profile?: Partial<ShopperProfile>;
+      imageDataUrl?: string;
     };
     messages = body.messages ?? [];
     profile = body.profile;
+    // Server-side gate: when the feature flag is off, ignore any uploaded image
+    // (so it can't be triggered by calling the API directly).
+    imageDataUrl =
+      visualSearchEnabled &&
+      typeof body.imageDataUrl === "string" &&
+      body.imageDataUrl.startsWith("data:")
+        ? body.imageDataUrl
+        : undefined;
   } catch {
     return new Response("Invalid request body", { status: 400 });
   }
@@ -143,17 +189,52 @@ export async function POST(req: Request) {
     return new Response("Missing GROQ_API_KEY", { status: 500 });
   }
 
+  // Visual search requires a signed-in user (protects the Voyage quota from
+  // anonymous abuse). Only verify the session when an image actually came
+  // through, so normal turns pay no auth overhead. The client also locks the
+  // upload icon for guests — this is the server-side enforcement.
+  if (imageDataUrl) {
+    try {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) imageDataUrl = undefined;
+    } catch {
+      imageDataUrl = undefined;
+    }
+  }
+
+  const hasLangOverride =
+    typeof profile?.language === "string" && profile.language in LANG_DIRECTIVE;
+
+  // When the shopper attaches a photo, nudge the model to run visual search
+  // immediately instead of asking them to describe it.
+  const imageBlock = imageDataUrl
+    ? `\n\n## IMAGE ATTACHED (this turn)
+The shopper uploaded a photo as visual inspiration. Call the \`visualSearch\` tool right away to find the closest-matching Kapruka products — do NOT ask them to describe the image. Then frame the results in one short sentence (e.g. "Found your match!" or "Here are the closest visual matches I could find").`
+    : "";
+
   const result = streamText({
     model: groq(MODEL),
-    system: SYSTEM + profileBlock(profile),
+    // Keep the language directive LAST so it stays the most salient instruction,
+    // even on the image/tool-error path (where the model otherwise drifts dialect).
+    system:
+      SYSTEM +
+      profileBlock(profile) +
+      imageBlock +
+      detectedLanguageBlock(messages, hasLangOverride),
     messages: await convertToModelMessages(messages),
-    tools: auraTools,
+    tools: makeAuraTools({ imageDataUrl }),
     stopWhen: stepCountIs(6),
   });
 
   return result.toUIMessageStreamResponse({
     onError: (error) => {
-      console.error("[aura/chat]", error);
+      console.error(
+        "[aura/chat]",
+        error instanceof Error ? (error.stack ?? error.message) : JSON.stringify(error),
+      );
       return "Something hiccuped on my end. Mind trying that again?";
     },
   });
