@@ -1,5 +1,14 @@
 import { createGroq } from "@ai-sdk/groq";
-import { convertToModelMessages, stepCountIs, streamText } from "ai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import {
+  convertToModelMessages,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  stepCountIs,
+  streamText,
+  type InferUIMessageChunk,
+  type LanguageModel,
+} from "ai";
 import { makeAuraTools } from "@/lib/tools";
 import type { AuraUIMessage } from "@/lib/ai-types";
 import type { ShopperProfile } from "@/lib/use-profile";
@@ -15,6 +24,74 @@ const groq = createGroq({ apiKey: process.env.GROQ_API_KEY });
 // Groq model. gpt-oss-120b is reliable + fast at multi-tool agentic calling
 // (llama-3.3-70b frequently emits malformed tool calls). Override via GROQ_MODEL.
 const MODEL = process.env.GROQ_MODEL ?? "openai/gpt-oss-120b";
+// When the primary trips its per-model daily/burst token limit, fall back to a
+// lighter sibling (same gpt-oss family → still reliable at tool calls) which
+// has its OWN separate quota. Override via GROQ_FALLBACK_MODEL.
+const FALLBACK_MODEL = process.env.GROQ_FALLBACK_MODEL ?? "openai/gpt-oss-20b";
+
+// Last-resort fallback: Google Gemini (free tier, separate provider + quota).
+// Only wired up if a key is present so local/CI without it still works.
+const google = process.env.GOOGLE_GEMINI_KEY
+  ? createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_GEMINI_KEY })
+  : null;
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+
+type ChainEntry = { label: string; model: LanguageModel; primary?: boolean };
+
+/** Ordered model fallback chain: Groq primary → Groq fallback → Gemini. */
+function modelChain(): ChainEntry[] {
+  const chain: ChainEntry[] = [
+    { label: MODEL, model: groq(MODEL), primary: true },
+    { label: FALLBACK_MODEL, model: groq(FALLBACK_MODEL) },
+  ];
+  if (google) chain.push({ label: `gemini/${GEMINI_MODEL}`, model: google(GEMINI_MODEL) });
+  return chain;
+}
+
+// Best-effort: once the primary 429s, skip it on subsequent requests (per warm
+// server instance) until it resets, so we don't pay a failed call every time.
+let primaryCooldownUntil = 0;
+
+/** Detect a Groq rate-limit error and parse its "try again in 9m57s" hint. */
+function readRateLimit(error: unknown): { limited: boolean; retryMs: number } {
+  const msg =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : JSON.stringify(error ?? "");
+  const status = (error as { statusCode?: number })?.statusCode;
+  const limited =
+    status === 429 || /rate.?limit|rate_limit_exceeded|tokens per (day|minute)|\bT[PR]?[DM]\b/i.test(msg);
+  let retryMs = 60_000;
+  const m = msg.match(/try again in\s+(?:(\d+)m)?([\d.]+)s/i);
+  if (m) retryMs = (parseInt(m[1] || "0", 10) * 60 + parseFloat(m[2])) * 1000;
+  return { limited, retryMs };
+}
+
+/** Warm, honest message shown when every model in the chain is unavailable. */
+function friendlyError(error: unknown): string {
+  return readRateLimit(error).limited
+    ? "I'm getting a lot of love right now and briefly hit my usage limit. Give me a minute, then tap Retry - your basket and chat are safe."
+    : "Something hiccuped on my end. Mind trying that again?";
+}
+
+// A chunk is "durable" once it represents user-visible output — answer text or
+// a completed tool result. Everything before that (start/step boundaries, the
+// reasoning gpt-oss streams, in-progress tool-call inputs) is buffered while we
+// probe a model: if it fails before producing durable output (e.g. a 429 on the
+// first or a later step), we discard the buffer and fall through to the next
+// model with nothing leaked to the client. Once durable output streams, we
+// commit and any later failure surfaces as a partial answer.
+function isDurableChunk(type: string): boolean {
+  return (
+    type.startsWith("text-") ||
+    type.startsWith("tool-output") ||
+    type.startsWith("data-") ||
+    type.startsWith("source-") ||
+    type === "file"
+  );
+}
 
 const today = () =>
   new Intl.DateTimeFormat("en-CA", {
@@ -76,14 +153,10 @@ Sri Lankan shoppers' biggest fear is the order that arrives late or not at all (
 - For gifts, offer a gift message (\`giftMessage\`) and, for cakes, icing text (\`icingText\`). Ask before assuming.
 - Checkout: once you've confirmed the items + recipient + address + city + date + sender, CALL createOrder. The interface then renders a secure click-to-pay card with the live link and a countdown — that card IS the payment. Never paste the checkout URL in your text; just tell them their secure link is ready below.
 
-## Tools
-- searchProducts: find items. Pass \`deliverTo\`/\`deliverBy\` when a destination/date is known to enable delivery confidence. If a search returns nothing, try a simpler/synonym query or offer categories.
-- getProduct: full detail + gallery for one item.
-- listCategories / listDeliveryCities: help undecided shoppers or confirm a city's canonical name.
-- checkDelivery: confirm feasibility + flat rate for a city/date on demand. Pass productId for cakes/flowers so freshness warnings show.
-- createOrder: generate a 60-minute click-to-pay link. NEVER call this until you've explicitly confirmed, in the conversation, ALL of: the exact product(s), recipient name + phone, full delivery address + city + date, and the sender's name. If anything is missing, ask first. Never fabricate contact or address details.
-- trackOrder: status for a paid order number.
-- visualSearch: when the shopper attaches a photo, find the closest-matching catalog products by visual similarity. Call it right away; don't ask them to describe the image.
+## Tool notes (each tool's schema already describes it — these are the non-obvious rules)
+- searchProducts: pass \`deliverTo\`/\`deliverBy\` when a destination/date is known. Nothing found → try a simpler/synonym query or offer categories.
+- checkDelivery: pass productId for cakes/flowers so freshness warnings surface.
+- createOrder: NEVER call until you've explicitly confirmed IN THE CONVERSATION all of: exact product(s), recipient name + phone, full address + city + date, sender name. Ask for anything missing; never fabricate contact or address details.
 
 ## Manners
 - Be honest about stock and delivery. If something is out of stock or undeliverable, say so kindly and offer alternatives.
@@ -215,27 +288,88 @@ export async function POST(req: Request) {
 The shopper uploaded a photo as visual inspiration. Call the \`visualSearch\` tool right away to find the closest-matching Kapruka products — do NOT ask them to describe the image. Then frame the results in one short sentence (e.g. "Found your match!" or "Here are the closest visual matches I could find").`
     : "";
 
-  const result = streamText({
-    model: groq(MODEL),
+  const system =
     // Keep the language directive LAST so it stays the most salient instruction,
     // even on the image/tool-error path (where the model otherwise drifts dialect).
-    system:
-      SYSTEM +
-      profileBlock(profile) +
-      imageBlock +
-      detectedLanguageBlock(messages, hasLangOverride),
-    messages: await convertToModelMessages(messages),
-    tools: makeAuraTools({ imageDataUrl }),
-    stopWhen: stepCountIs(6),
-  });
+    SYSTEM + profileBlock(profile) + imageBlock + detectedLanguageBlock(messages, hasLangOverride);
+  const modelMessages = await convertToModelMessages(messages);
+  const tools = makeAuraTools({ imageDataUrl });
 
-  return result.toUIMessageStreamResponse({
-    onError: (error) => {
-      console.error(
-        "[aura/chat]",
-        error instanceof Error ? (error.stack ?? error.message) : JSON.stringify(error),
-      );
-      return "Something hiccuped on my end. Mind trying that again?";
+  // Skip the primary while it's cooling down from a recent 429 (best-effort).
+  let chain = modelChain();
+  if (Date.now() < primaryCooldownUntil) chain = chain.filter((c) => !c.primary);
+
+  // Try each model in turn. A model's request is "committed" only once it emits
+  // real content; if it fails before that (a 429 hits on the first API call), we
+  // discard its buffered start chunks and fall through to the next model — so
+  // the shopper sees one clean stream from whichever model actually answered.
+  const stream = createUIMessageStream<AuraUIMessage>({
+    onError: friendlyError,
+    execute: async ({ writer }) => {
+      let lastError: unknown = new Error("No model available");
+      for (let i = 0; i < chain.length; i++) {
+        const entry = chain[i];
+        const isLast = i === chain.length - 1;
+        const result = streamText({
+          model: entry.model,
+          system,
+          messages: modelMessages,
+          tools,
+          stopWhen: stepCountIs(6),
+          // Fail fast on non-final models so we fall back without long backoff.
+          maxRetries: isLast ? 2 : 0,
+        });
+
+        const buffered: InferUIMessageChunk<AuraUIMessage>[] = [];
+        let committed = false;
+        let failed: unknown = null;
+        try {
+          for await (const chunk of result.toUIMessageStream<AuraUIMessage>({
+            onError: (e) => {
+              failed = e;
+              return friendlyError(e);
+            },
+          })) {
+            if (chunk.type === "error") {
+              failed ??= chunk.errorText;
+              break;
+            }
+            if (!committed && !isDurableChunk(chunk.type)) {
+              buffered.push(chunk); // hold reasoning/tool-input/structural until real output
+              continue;
+            }
+            if (!committed) {
+              committed = true;
+              for (const b of buffered) writer.write(b);
+              buffered.length = 0;
+            }
+            writer.write(chunk);
+          }
+        } catch (e) {
+          failed = e;
+        }
+
+        if (!failed) {
+          for (const b of buffered) writer.write(b); // flush an empty/structural turn
+          return;
+        }
+
+        lastError = failed;
+        if (entry.primary && readRateLimit(failed).limited) {
+          const { retryMs } = readRateLimit(failed);
+          primaryCooldownUntil = Date.now() + Math.min(Math.max(retryMs, 30_000), 15 * 60_000);
+        }
+        console.error(
+          `[aura/chat] ${entry.label} failed${committed ? " mid-stream" : ""}:`,
+          failed instanceof Error ? failed.message : JSON.stringify(failed),
+        );
+
+        // Once content has streamed, we can't cleanly swap models — surface it.
+        if (committed || isLast) throw lastError;
+      }
+      throw lastError;
     },
   });
+
+  return createUIMessageStreamResponse({ stream });
 }

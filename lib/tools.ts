@@ -10,6 +10,11 @@ import { tool } from "ai";
 import { z } from "zod";
 import * as kapruka from "./kapruka";
 import { visualSearch } from "./visual-search";
+import {
+  searchResultToModel,
+  visualResultToModel,
+  productDetailToModel,
+} from "./model-output";
 
 /**
  * Per-request context injected into the tools. `imageDataUrl` is the shopper's
@@ -44,6 +49,9 @@ export function makeAuraTools(ctx: AuraToolContext = {}) {
         .describe("Target delivery date YYYY-MM-DD (Asia/Colombo). Pair with deliverTo to check freshness for that date; omit for today."),
     }),
     execute: async (args) => kapruka.searchProducts(args),
+    // Hand the model a compact table (no image/URL bytes); the UI still gets
+    // the full objects as the rendered tool-part output.
+    toModelOutput: ({ output }) => ({ type: "text", value: searchResultToModel(output) }),
   }),
 
   getProduct: tool({
@@ -53,6 +61,7 @@ export function makeAuraTools(ctx: AuraToolContext = {}) {
       productId: z.string().describe("Kapruka product ID, e.g. 'FLOWERS00T2089'."),
     }),
     execute: async ({ productId }) => kapruka.getProduct(productId),
+    toModelOutput: ({ output }) => ({ type: "text", value: productDetailToModel(output) }),
   }),
 
   listCategories: tool({
@@ -149,6 +158,7 @@ export function makeAuraTools(ctx: AuraToolContext = {}) {
         deliverBy: deliverBy ?? undefined,
       });
     },
+    toModelOutput: ({ output }) => ({ type: "text", value: visualResultToModel(output) }),
   }),
   };
 }
