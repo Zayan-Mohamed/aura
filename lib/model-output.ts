@@ -110,6 +110,21 @@ export function visualResultToModel(output: unknown): string {
     .join("\n");
 }
 
+/** compareProducts → compact comparison table for the model. */
+export function compareResultToModel(output: unknown): string {
+  if (isErr(output)) return `error: ${output.error}`;
+  const o = output as { products: Product[]; verdict?: string };
+  if (!o.products?.length) return "No products to compare.";
+  return [
+    `comparing ${o.products.length} products:`,
+    productsTable(o.products),
+    o.verdict ? `your verdict (shown to shopper): ${o.verdict}` : "",
+    CARDS_NOTE,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
 /** getProduct → compact text, but KEEP the description (the model elaborates from it). */
 export function productDetailToModel(output: unknown): string {
   if (isErr(output)) return `error: ${output.error}`;

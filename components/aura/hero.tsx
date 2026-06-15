@@ -1,8 +1,10 @@
 "use client";
 
+import * as React from "react";
 import { motion } from "motion/react";
-import { ShoppingBasket, Smartphone, Cake, Truck, MessageCircleHeart } from "lucide-react";
+import { ShoppingBasket, Smartphone, Cake, Truck, MessageCircleHeart, Gift } from "lucide-react";
 import { AuraMark } from "./aura-mark";
+import { currentSeason, type Season } from "@/lib/seasons";
 
 const SUGGESTIONS = [
   { icon: ShoppingBasket, label: "Stock up my weekly groceries", text: "Help me stock up on weekly groceries — rice, dhal, tea, and a few essentials." },
@@ -13,6 +15,19 @@ const SUGGESTIONS = [
 ];
 
 export function Hero({ onAsk }: { onAsk: (text: string) => void }) {
+  // Resolve the season after mount (client clock) to avoid an SSR/CSR mismatch.
+  const [season, setSeason] = React.useState<Season | null>(null);
+  React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSeason(currentSeason());
+  }, []);
+
+  // Seasonal prompts lead; the evergreen ones follow.
+  const seasonalChips = season
+    ? season.suggestions.map((s) => ({ icon: Gift, label: s.label, text: s.text }))
+    : [];
+  const chips = [...seasonalChips, ...SUGGESTIONS];
+
   return (
     <div className="relative mx-auto flex min-h-full max-w-full flex-col items-center justify-center px-2 pb-28 pt-10 text-center">
       <motion.div
@@ -23,6 +38,18 @@ export function Hero({ onAsk }: { onAsk: (text: string) => void }) {
       >
         <AuraMark className="size-9" />
       </motion.div>
+
+      {season && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="mt-5 inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/[0.07] px-3.5 py-1.5 text-xs font-medium text-foreground"
+        >
+          <span className="size-1.5 rounded-full bg-gold" aria-hidden />
+          {season.label}
+        </motion.div>
+      )}
 
       <motion.h1
         initial={{ opacity: 0, y: 14 }}
@@ -39,9 +66,9 @@ export function Hero({ onAsk }: { onAsk: (text: string) => void }) {
         transition={{ delay: 0.16, duration: 0.5 }}
         className="mt-4 max-w-md text-pretty text-base leading-relaxed text-muted-foreground"
       >
-        I’m Aura, your shopping concierge for Kapruka. Groceries, gadgets, a
-        gift for someone special. Tell me what you need and where it’s going,
-        and I’ll make sure it actually gets there.
+        {season
+          ? season.blurb
+          : "I’m Aura, your shopping concierge for Kapruka. Groceries, gadgets, a gift for someone special. Tell me what you need and where it’s going, and I’ll make sure it actually gets there."}
       </motion.p>
 
       <motion.div
@@ -50,7 +77,7 @@ export function Hero({ onAsk }: { onAsk: (text: string) => void }) {
         transition={{ delay: 0.28, duration: 0.5 }}
         className="mt-8 flex flex-wrap items-center justify-center gap-2"
       >
-        {SUGGESTIONS.map((s, i) => (
+        {chips.map((s, i) => (
           <motion.button
             key={s.label}
             type="button"

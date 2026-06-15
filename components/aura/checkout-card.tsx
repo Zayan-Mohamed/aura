@@ -2,9 +2,11 @@
 
 import * as React from "react";
 import { motion } from "motion/react";
-import { ShieldCheck, Clock, ExternalLink, Receipt } from "lucide-react";
+import { ShieldCheck, Clock, ExternalLink, Receipt, Share2, Copy, Check } from "lucide-react";
 import type { OrderConfirmation } from "@/lib/kapruka";
 import { formatMoney, minutesUntil } from "@/lib/format";
+import { shareText } from "@/lib/share";
+import { cn } from "@/lib/utils";
 
 function Countdown({ expiresAt }: { expiresAt: string }) {
   const [mins, setMins] = React.useState<number | null>(() => minutesUntil(expiresAt));
@@ -39,6 +41,22 @@ function Row({ label, value, strong }: { label: string; value: string; strong?: 
 export function CheckoutCard({ order }: { order: OrderConfirmation }) {
   const { summary } = order;
   const cur = summary.currency;
+  const [copied, setCopied] = React.useState(false);
+
+  // The whole point of sharing: hand someone the actual click-to-pay link so
+  // they can settle the bill (very common in SL — a relative pays for a gift).
+  const shareMessage = `I've lined up an order on Kapruka via Aura.\nTotal: ${formatMoney({ amount: summary.grandTotal, currency: cur })}\nPay securely here (link expires soon): ${order.checkoutUrl}`;
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(order.checkoutUrl);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch {
+      /* clipboard blocked — ignore */
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -71,6 +89,33 @@ export function CheckoutCard({ order }: { order: OrderConfirmation }) {
           Pay securely on Kapruka
           <ExternalLink className="size-4" />
         </a>
+
+        {/* Forward the actual click-to-pay link to whoever's settling the bill. */}
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => void shareText(shareMessage, "Aura order")}
+            className="flex items-center justify-center gap-1.5 rounded-full border border-border px-3 py-2.5 text-xs font-semibold tracking-wide text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <Share2 className="size-3.5" /> Share pay link
+          </button>
+          <button
+            type="button"
+            onClick={copyLink}
+            aria-label="Copy payment link"
+            className={cn(
+              "flex items-center justify-center gap-1.5 rounded-full border px-3 py-2.5 text-xs font-semibold tracking-wide transition-colors",
+              copied
+                ? "border-jade/40 bg-jade/10 text-jade"
+                : "border-border text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+          >
+            {copied ? <><Check className="size-3.5" /> Copied</> : <><Copy className="size-3.5" /> Copy link</>}
+          </button>
+        </div>
+        <p className="mt-1.5 text-center text-[0.7rem] text-muted-foreground/80">
+          Send the link to whoever&rsquo;s paying — they can settle it without an account.
+        </p>
 
         <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1">

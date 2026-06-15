@@ -8,7 +8,7 @@ import type { ShopperProfile } from "@/lib/use-profile";
 import { EMPTY_PROFILE } from "@/lib/use-profile";
 import type { BasketItem } from "@/lib/use-basket";
 import type { AuraUIMessage } from "@/lib/ai-types";
-import type { ConversationRow, ProfileRow } from "@/lib/supabase/types";
+import type { ConversationRow, OrderRow, ProfileRow } from "@/lib/supabase/types";
 
 type DB = SupabaseClient;
 
@@ -156,13 +156,22 @@ export function ordersFromMessages(messages: AuraUIMessage[]): OrderToSave[] {
   const out: OrderToSave[] = [];
   for (const m of messages) {
     if (m.role !== "assistant") continue;
-    for (const part of m.parts as { type?: string; output?: Record<string, unknown> }[]) {
+    for (const part of m.parts as {
+      type?: string;
+      input?: Record<string, unknown>;
+      output?: Record<string, unknown>;
+    }[]) {
       if (part?.type === "tool-createOrder" && part.output && !("error" in part.output)) {
         const o = part.output;
         if (typeof o.orderRef === "string") {
           out.push({
             orderRef: o.orderRef,
             checkoutUrl: o.checkoutUrl as string | undefined,
+            // The cart the order was built from lives on the tool INPUT — capture
+            // it so we can offer one-tap reorder later (the output omits items).
+            items: Array.isArray(part.input?.cart) ? part.input!.cart : [],
+            recipient: part.input?.recipient,
+            delivery: part.input?.delivery,
             summary: o.summary,
             expiresAt: o.expiresAt as string | undefined,
           });
@@ -171,6 +180,17 @@ export function ordersFromMessages(messages: AuraUIMessage[]): OrderToSave[] {
     }
   }
   return out;
+}
+
+/** Recent orders for the signed-in user (newest first) — powers reorder. */
+export async function listOrders(db: DB, userId: string): Promise<OrderRow[]> {
+  const { data } = await db
+    .from("orders")
+    .select("id,order_ref,checkout_url,status,items,summary,recipient,delivery,created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  return (data as OrderRow[]) ?? [];
 }
 
 export { EMPTY_PROFILE };

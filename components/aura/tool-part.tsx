@@ -13,9 +13,11 @@ import {
   SearchX,
   AlertTriangle,
   Sparkles,
+  Scale,
 } from "lucide-react";
 import { ProductCarousel } from "./product-carousel";
 import { ProductDetail } from "./product-detail";
+import { ComparisonCard } from "./comparison-card";
 import { CategoryGrid } from "./category-grid";
 import { DeliveryCard } from "./delivery-result";
 import { CheckoutCard } from "./checkout-card";
@@ -40,6 +42,7 @@ const LABELS: Record<string, { icon: React.ElementType; verb: string }> = {
   "tool-createOrder": { icon: Receipt, verb: "Preparing your secure checkout" },
   "tool-trackOrder": { icon: PackageCheck, verb: "Tracking your order" },
   "tool-visualSearch": { icon: Sparkles, verb: "Matching your photo" },
+  "tool-compareProducts": { icon: Scale, verb: "Lining them up" },
 };
 
 function ToolStatus({ type, query }: { type: string; query?: string }) {
@@ -118,10 +121,24 @@ export function ToolPart({
           </Notice>
         );
       }
-      return <ProductCarousel products={products} deliveryContext={ctx} onAsk={onAsk} />;
+      return (
+        <ProductCarousel
+          products={products}
+          deliveryContext={ctx}
+          rationale={out.rationale}
+          onAsk={onAsk}
+        />
+      );
     }
     case "tool-getProduct":
       return out.product ? <ProductDetail product={out.product} onAsk={onAsk} /> : null;
+    case "tool-compareProducts": {
+      const products = out.products ?? [];
+      if (products.length < 2) {
+        return <Notice icon={Scale}>I need at least two products to compare. Want me to search again?</Notice>;
+      }
+      return <ComparisonCard products={products} verdict={out.verdict} onAsk={onAsk} />;
+    }
     case "tool-listCategories":
       return <CategoryGrid categories={out.categories ?? []} onAsk={onAsk} />;
     case "tool-listDeliveryCities": {
@@ -175,6 +192,7 @@ export function ToolPart({
           <ProductCarousel
             products={products}
             deliveryContext={out.deliveryContext}
+            rationale={out.rationale}
             title={out.caption ? `Closest to your “${out.caption}”` : undefined}
             onAsk={onAsk}
           />

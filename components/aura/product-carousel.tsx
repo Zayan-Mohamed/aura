@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { ChevronLeft, ChevronRight, MapPin, ShieldCheck, EyeOff } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, ShieldCheck, EyeOff, Sparkles } from "lucide-react";
 import type { Product, DeliveryContext } from "@/lib/kapruka";
 import { ProductCard } from "./product-card";
 import {
@@ -10,6 +10,21 @@ import {
   CarouselItem,
   useCarousel,
 } from "@/components/ui/carousel";
+
+// The concierge "why these" line — the model's one-sentence reasoning for this
+// selection, turning a carousel into a recommendation.
+function RationaleLine({ text }: { text: string }) {
+  return (
+    <motion.p
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mb-3 flex items-start gap-1.5 text-sm text-muted-foreground"
+    >
+      <Sparkles className="mt-0.5 size-3.5 shrink-0 text-gold" />
+      <span className="text-card-foreground/90">{text}</span>
+    </motion.p>
+  );
+}
 
 // The signature "Proactive Delivery Confidence" banner: confirms where/when
 // and reassures the shopper that what's shown can actually arrive.
@@ -69,11 +84,13 @@ export function ProductCarousel({
   products,
   title,
   deliveryContext,
+  rationale,
   onAsk,
 }: {
   products: Product[];
   title?: string;
   deliveryContext?: DeliveryContext;
+  rationale?: string;
   onAsk?: (text: string) => void;
 }) {
   if (products.length === 0) return null;
@@ -83,6 +100,7 @@ export function ProductCarousel({
     return (
       <div className="w-full max-w-[280px]">
         {deliveryContext && <DeliveryConfidenceBanner ctx={deliveryContext} />}
+        {rationale && <RationaleLine text={rationale} />}
         <ProductCard product={products[0]} onAsk={onAsk} />
       </div>
     );
@@ -94,6 +112,7 @@ export function ProductCarousel({
       opts={{ align: "start", dragFree: true, containScroll: "trimSnaps" }}
     >
       {deliveryContext && <DeliveryConfidenceBanner ctx={deliveryContext} />}
+      {rationale && <RationaleLine text={rationale} />}
       <div className="mb-3 flex items-end justify-between gap-3">
         <p className="text-sm text-muted-foreground">
           {title ?? `${products.length} finds`}

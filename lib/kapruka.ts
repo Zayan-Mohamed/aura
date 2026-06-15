@@ -522,6 +522,34 @@ export async function getProduct(
   }
 }
 
+/**
+ * Fetch several products at once for a side-by-side comparison. Reuses the
+ * cached single-product fetcher (so repeats are free), drops any that fail, and
+ * preserves the requested order. Returns the products the UI renders as a
+ * comparison table — no extra normalization needed.
+ */
+export async function compareProducts(
+  productIds: string[],
+  currency = "LKR",
+): Promise<Failable<{ products: Product[] }>> {
+  try {
+    const unique = [...new Set(productIds.map((id) => id.trim()).filter(Boolean))].slice(0, 4);
+    if (unique.length < 2) {
+      return { error: "Give me at least two product IDs to compare." };
+    }
+    const results = await Promise.all(unique.map((id) => getProduct(id, currency)));
+    const products = results
+      .filter((r): r is { product: Product } => !("error" in r))
+      .map((r) => r.product);
+    if (products.length < 2) {
+      return { error: "I couldn't load enough of those products to compare. Mind re-searching them?" };
+    }
+    return { products };
+  } catch (err) {
+    return { error: toError(err) };
+  }
+}
+
 export async function listCategories(): Promise<Failable<{ categories: Category[] }>> {
   try {
     const data = (await cachedCall("kapruka_list_categories", {

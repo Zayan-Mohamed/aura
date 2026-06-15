@@ -3,21 +3,35 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { X, Plus, MessageSquare, Trash2, LogIn, LogOut } from "lucide-react";
+import { X, Plus, MessageSquare, Trash2, LogIn, LogOut, RotateCcw, Receipt } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
-import type { ConversationRow } from "@/lib/supabase/types";
+import type { ConversationRow, OrderRow } from "@/lib/supabase/types";
 import { AuraMark } from "./aura-mark";
+import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
+
+function orderItemCount(order: OrderRow): number {
+  const items = (Array.isArray(order.items) ? order.items : []) as { quantity?: number }[];
+  return items.reduce((n, i) => n + (i.quantity ?? 1), 0);
+}
+
+function orderTotal(order: OrderRow): string | null {
+  const s = order.summary as { grand_total?: number; currency?: string } | null;
+  if (!s || typeof s.grand_total !== "number") return null;
+  return formatMoney({ amount: s.grand_total, currency: s.currency ?? "LKR" });
+}
 
 export function LeftSidebar({
   open,
   onClose,
   user,
   conversations,
+  orders,
   activeId,
   onNewChat,
   onSelect,
   onDelete,
+  onReorder,
   onSignIn,
   onSignOut,
 }: {
@@ -25,10 +39,12 @@ export function LeftSidebar({
   onClose: () => void;
   user: User | null;
   conversations: ConversationRow[];
+  orders: OrderRow[];
   activeId: string | null;
   onNewChat: () => void;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
+  onReorder: (order: OrderRow) => void;
   onSignIn: () => void;
   onSignOut: () => void;
 }) {
@@ -142,6 +158,44 @@ export function LeftSidebar({
                 </ul>
               )}
             </div>
+
+            {/* Recent orders → one-tap reorder */}
+            {user && orders.length > 0 && (
+              <div className="border-t border-border/70 px-2 py-3">
+                <p className="px-3 pb-1.5 text-[0.7rem] font-medium uppercase tracking-widest text-muted-foreground">
+                  Recent orders
+                </p>
+                <ul className="flex max-h-44 flex-col gap-0.5 overflow-y-auto aura-scroll">
+                  {orders.map((o) => {
+                    const count = orderItemCount(o);
+                    const total = orderTotal(o);
+                    return (
+                      <li
+                        key={o.id}
+                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-muted/60"
+                      >
+                        <Receipt className="size-3.5 shrink-0 text-muted-foreground" />
+                        <div className="min-w-0 flex-1 leading-tight">
+                          <p className="truncate text-xs font-medium text-foreground">{o.order_ref}</p>
+                          <p className="truncate text-[0.7rem] text-muted-foreground">
+                            {count > 0 ? `${count} item${count === 1 ? "" : "s"}` : "Order"}
+                            {total ? ` · ${total}` : ""}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => onReorder(o)}
+                          aria-label={`Reorder ${o.order_ref}`}
+                          className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border px-2.5 py-1 text-[0.7rem] font-medium text-muted-foreground transition-colors hover:border-gold/40 hover:bg-gold/5 hover:text-foreground"
+                        >
+                          <RotateCcw className="size-3" /> Reorder
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
 
             {/* Account */}
             <div className="border-t border-border/70 p-3">

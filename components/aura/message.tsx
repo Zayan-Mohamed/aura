@@ -5,6 +5,7 @@ import type { AuraUIMessage } from "@/lib/ai-types";
 import { AuraMark } from "./aura-mark";
 import { ToolPart } from "./tool-part";
 import { Markdown } from "./markdown";
+import { MessageActions } from "./message-actions";
 import { cn } from "@/lib/utils";
 
 function TextBubble({ text, role }: { text: string; role: "user" | "assistant" }) {
@@ -31,6 +32,15 @@ export function ChatMessage({
   onAsk?: (text: string) => void;
 }) {
   const isUser = message.role === "user";
+
+  // Concatenated assistant prose — fuels copy + read-aloud actions.
+  const assistantText = isUser
+    ? ""
+    : message.parts
+        .filter((p): p is { type: "text"; text: string } => p.type === "text")
+        .map((p) => p.text)
+        .join("\n\n")
+        .trim();
 
   return (
     <motion.div
@@ -66,6 +76,8 @@ export function ChatMessage({
           }
           return null;
         })}
+
+        {assistantText && <MessageActions text={assistantText} />}
       </div>
     </motion.div>
   );

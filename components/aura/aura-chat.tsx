@@ -6,11 +6,13 @@ import { DefaultChatTransport } from "ai";
 import { AnimatePresence, motion } from "motion/react";
 import { Moon, Sun, RotateCcw, AlertTriangle, PanelLeft } from "lucide-react";
 import type { AuraUIMessage } from "@/lib/ai-types";
-import type { ConversationRow } from "@/lib/supabase/types";
+import type { ConversationRow, OrderRow } from "@/lib/supabase/types";
 import { AuraMark } from "./aura-mark";
 import { ChatMessage } from "./message";
 import { Hero } from "./hero";
 import { Composer } from "./composer";
+import { QuickReplies } from "./quick-replies";
+import { deriveQuickReplies } from "@/lib/quick-replies";
 import { TypingIndicator } from "./typing";
 import { ProfileDrawer } from "./profile-drawer";
 import { BasketDrawer } from "./basket-drawer";
@@ -82,6 +84,7 @@ export function AuraChat() {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [signInOpen, setSignInOpen] = React.useState(false);
   const [conversations, setConversations] = React.useState<ConversationRow[]>([]);
+  const [orders, setOrders] = React.useState<OrderRow[]>([]);
   const [conversationId, setConversationId] = React.useState<string | null>(null);
 
   // Latest-value refs so the persistence effect can read without re-subscribing.
@@ -99,12 +102,41 @@ export function AuraChat() {
     setConversations(await cloud.listConversations(supabase, user.id));
   }, [supabase, user]);
 
+  const refreshOrders = React.useCallback(async () => {
+    if (!user) return;
+    setOrders(await cloud.listOrders(supabase, user.id));
+  }, [supabase, user]);
+
+  // One-tap reorder: ask Aura to rebuild a past order's basket and check out.
+  const reorder = React.useCallback(
+    (order: OrderRow) => {
+      const items = (Array.isArray(order.items) ? order.items : []) as {
+        productId?: string;
+        quantity?: number;
+      }[];
+      const lines = items
+        .filter((i) => i.productId)
+        .map((i) => `- ${i.quantity ?? 1}× product ${i.productId}`)
+        .join("\n");
+      if (!lines) {
+        ask("I'd like to reorder something I bought before — can you help me find it again?");
+        return;
+      }
+      ask(
+        `I'd like to reorder a previous order. Please look these up, add them to a fresh basket, and walk me through checkout again:\n${lines}`,
+      );
+      setSidebarOpen(false);
+    },
+    [ask],
+  );
+
   // --- on sign-in: pull profile + basket from the cloud (or push local up) ---
   React.useEffect(() => {
     if (!user) {
       // Sync from the external auth system — clear cloud state on sign-out.
       /* eslint-disable react-hooks/set-state-in-effect */
       setConversations([]);
+      setOrders([]);
       setConversationId(null);
       /* eslint-enable react-hooks/set-state-in-effect */
       conversationIdRef.current = null;
@@ -125,11 +157,12 @@ export function AuraChat() {
         await cloud.upsertBasket(supabase, user.id, basketStore.snapshot());
 
       if (!cancelled) await refreshConversations();
+      if (!cancelled) await refreshOrders();
     })();
     return () => {
       cancelled = true;
     };
-  }, [user, supabase, update, refreshConversations]);
+  }, [user, supabase, update, refreshConversations, refreshOrders]);
 
   // --- write-through profile + basket changes while signed in (debounced) ---
   React.useEffect(() => {
@@ -164,16 +197,18 @@ export function AuraChat() {
       }
       await cloud.saveMessages(supabase, convId, user.id, unsaved);
       for (const m of unsaved) savedIds.current.add(m.id);
-      for (const o of cloud.ordersFromMessages(unsaved)) {
+      const newOrders = cloud.ordersFromMessages(unsaved);
+      for (const o of newOrders) {
         await cloud.saveOrder(supabase, user.id, convId, o);
       }
       await cloud.touchConversation(supabase, convId);
       if (!cancelled) await refreshConversations();
+      if (!cancelled && newOrders.length) await refreshOrders();
     })();
     return () => {
       cancelled = true;
     };
-  }, [status, user, supabase, refreshConversations]);
+  }, [status, user, supabase, refreshConversations, refreshOrders]);
 
   // --- chat actions ---
   const newChat = React.useCallback(() => {
@@ -218,10 +253,12 @@ export function AuraChat() {
         onClose={() => setSidebarOpen(false)}
         user={user}
         conversations={conversations}
+        orders={orders}
         activeId={conversationId}
         onNewChat={newChat}
         onSelect={selectConversation}
         onDelete={removeConversation}
+        onReorder={reorder}
         onSignIn={() => setSignInOpen(true)}
         onSignOut={signOut}
       />
@@ -283,6 +320,17 @@ export function AuraChat() {
                 <ChatMessage key={m.id} message={m} onAsk={ask} />
               ))}
 
+              {/* Contextual follow-up chips under the latest assistant reply */}
+              {status === "ready" &&
+                (() => {
+                  const last = messages[messages.length - 1];
+                  if (last?.role !== "assistant") return null;
+                  const replies = deriveQuickReplies(
+                    last.parts as Parameters<typeof deriveQuickReplies>[0],
+                  );
+                  return <QuickReplies replies={replies} onAsk={ask} />;
+                })()}
+
               <AnimatePresence>
                 {status === "submitted" && (
                   <motion.div
@@ -333,6 +381,7 @@ export function AuraChat() {
             allowImage={visualSearchEnabled}
             imageEnabled={visualSearchEnabled && !!user}
             onRequireAuth={() => setSignInOpen(true)}
+            language={profile.language}
           />
           <p className="mt-2 text-center text-[0.7rem] text-muted-foreground/70">
             Aura shops the live Kapruka catalog · prices in LKR

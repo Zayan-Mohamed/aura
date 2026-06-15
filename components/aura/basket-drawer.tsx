@@ -3,13 +3,16 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { ShoppingBag, X, Minus, Plus, Trash2, ArrowRight } from "lucide-react";
+import { ShoppingBag, X, Minus, Plus, Trash2, ArrowRight, Wallet, AlertTriangle } from "lucide-react";
 import { useBasket } from "@/lib/use-basket";
+import { useBudget } from "@/lib/use-budget";
 import { formatMoney } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { ProductImage } from "./product-image";
 
 export function BasketDrawer({ onCheckout }: { onCheckout: (message: string) => void }) {
   const { items, count, setQty, remove, clear } = useBasket();
+  const { budget, setBudget } = useBudget();
   const [open, setOpen] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
   const reduce = useReducedMotion();
@@ -31,6 +34,18 @@ export function BasketDrawer({ onCheckout }: { onCheckout: (message: string) => 
 
   const currency = items.find((i) => i.price.amount != null)?.price.currency ?? "LKR";
   const subtotal = items.reduce((sum, i) => sum + (i.price.amount ?? 0) * i.quantity, 0);
+
+  // Budget guardian: how much of the set ceiling is used, and whether we're over.
+  const pct = budget ? Math.min(100, Math.round((subtotal / budget) * 100)) : 0;
+  const over = budget ? subtotal - budget : 0;
+  const isOver = over > 0;
+  const [editingBudget, setEditingBudget] = React.useState(false);
+  const [budgetDraft, setBudgetDraft] = React.useState("");
+  const saveBudget = () => {
+    const n = Number(budgetDraft.replace(/[^\d.]/g, ""));
+    setBudget(Number.isFinite(n) && n > 0 ? n : null);
+    setEditingBudget(false);
+  };
 
   const checkout = () => {
     if (items.length === 0) return;
@@ -165,6 +180,85 @@ export function BasketDrawer({ onCheckout }: { onCheckout: (message: string) => 
                       </div>
 
                       <div className="border-t border-border/70 px-5 py-4">
+                        {/* Budget guardian */}
+                        <div className="mb-3">
+                          {budget == null && !editingBudget ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setBudgetDraft("");
+                                setEditingBudget(true);
+                              }}
+                              className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                            >
+                              <Wallet className="size-3.5" /> Set a budget
+                            </button>
+                          ) : editingBudget ? (
+                            <div className="flex items-center gap-2">
+                              <div className="flex flex-1 items-center gap-1.5 rounded-full border border-border px-3 py-1.5">
+                                <Wallet className="size-3.5 text-muted-foreground" />
+                                <span className="text-xs text-muted-foreground">Rs</span>
+                                <input
+                                  autoFocus
+                                  inputMode="numeric"
+                                  value={budgetDraft}
+                                  onChange={(e) => setBudgetDraft(e.target.value)}
+                                  onKeyDown={(e) => e.key === "Enter" && saveBudget()}
+                                  placeholder="80000"
+                                  className="tnum w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/60"
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                onClick={saveBudget}
+                                className="rounded-full bg-gold px-3 py-1.5 text-xs font-semibold text-gold-foreground"
+                              >
+                                Set
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="mb-1.5 flex items-center justify-between text-xs">
+                                <span
+                                  className={cn(
+                                    "inline-flex items-center gap-1.5 font-medium",
+                                    isOver ? "text-rose" : "text-muted-foreground",
+                                  )}
+                                >
+                                  {isOver ? <AlertTriangle className="size-3.5" /> : <Wallet className="size-3.5" />}
+                                  {isOver
+                                    ? `${formatMoney({ amount: over, currency })} over budget`
+                                    : `${formatMoney({ amount: subtotal, currency })} of ${formatMoney({ amount: budget, currency })}`}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setBudgetDraft(String(budget));
+                                    setEditingBudget(true);
+                                  }}
+                                  className="text-muted-foreground/70 underline-offset-2 hover:text-foreground hover:underline"
+                                >
+                                  Edit
+                                </button>
+                              </div>
+                              <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                                <div
+                                  className={cn(
+                                    "h-full rounded-full transition-all",
+                                    isOver ? "bg-rose" : pct > 85 ? "bg-gold" : "bg-jade",
+                                  )}
+                                  style={{ width: `${isOver ? 100 : pct}%` }}
+                                />
+                              </div>
+                              {isOver && (
+                                <p className="mt-1.5 text-[0.7rem] text-muted-foreground">
+                                  Tap an item to swap for something lighter, or ask Aura for cheaper picks.
+                                </p>
+                              )}
+                            </>
+                          )}
+                        </div>
+
                         <div className="mb-3 flex items-center justify-between text-sm">
                           <span className="text-muted-foreground">Subtotal</span>
                           <span className="tnum text-base font-semibold text-foreground">

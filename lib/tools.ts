@@ -14,6 +14,7 @@ import {
   searchResultToModel,
   visualResultToModel,
   productDetailToModel,
+  compareResultToModel,
 } from "./model-output";
 
 /**
@@ -47,11 +48,43 @@ export function makeAuraTools(ctx: AuraToolContext = {}) {
         .string()
         .optional()
         .describe("Target delivery date YYYY-MM-DD (Asia/Colombo). Pair with deliverTo to check freshness for that date; omit for today."),
+      rationale: z
+        .string()
+        .max(160)
+        .nullish()
+        .describe("Optional ONE concierge-style line explaining WHY you picked these for this shopper (e.g. 'soft, under budget, and reaches Kandy fresh'). Shown above the cards — keep it short, warm, specific. Omit for a plain browse."),
     }),
-    execute: async (args) => kapruka.searchProducts(args),
+    execute: async ({ rationale, ...args }) => {
+      const res = await kapruka.searchProducts(args);
+      // Merge the model's "why these" line into the output so the UI can show
+      // it above the carousel (it's not catalog data, so it lives outside kapruka).
+      return rationale && !("error" in res) ? { ...res, rationale } : res;
+    },
     // Hand the model a compact table (no image/URL bytes); the UI still gets
     // the full objects as the rendered tool-part output.
     toModelOutput: ({ output }) => ({ type: "text", value: searchResultToModel(output) }),
+  }),
+
+  compareProducts: tool({
+    description:
+      "Put 2–4 products side by side as a comparison table (price, savings, stock, delivery, category) so the shopper can decide. Use when they ask to 'compare these', are torn between options, or you want to help them choose well. Pass the exact Kapruka product IDs from a recent search/carousel. Add a short `verdict` recommending one and why.",
+    inputSchema: z.object({
+      productIds: z
+        .array(z.string())
+        .min(2)
+        .max(4)
+        .describe("2–4 Kapruka product IDs to compare, from a recent search."),
+      verdict: z
+        .string()
+        .max(200)
+        .nullish()
+        .describe("Optional one-line recommendation shown under the table (e.g. 'The M17 wins on value — 5G and double the storage for Rs 4,600 more')."),
+    }),
+    execute: async ({ productIds, verdict }) => {
+      const res = await kapruka.compareProducts(productIds);
+      return verdict && !("error" in res) ? { ...res, verdict } : res;
+    },
+    toModelOutput: ({ output }) => ({ type: "text", value: compareResultToModel(output) }),
   }),
 
   getProduct: tool({
@@ -146,17 +179,23 @@ export function makeAuraTools(ctx: AuraToolContext = {}) {
         .describe("Any words the shopper typed alongside the image (budget, occasion, colour)."),
       deliverTo: z.string().nullish().describe("Destination city, if known, for delivery confidence."),
       deliverBy: z.string().nullish().describe("Target delivery date YYYY-MM-DD, if known."),
+      rationale: z
+        .string()
+        .max(160)
+        .nullish()
+        .describe("Optional ONE short line on why these match the photo (shown above the cards)."),
     }),
-    execute: async ({ hint, deliverTo, deliverBy }) => {
+    execute: async ({ hint, deliverTo, deliverBy, rationale }) => {
       if (!ctx.imageDataUrl) {
         return { error: "No image was attached this turn — ask the shopper to upload one." };
       }
-      return visualSearch({
+      const res = await visualSearch({
         imageDataUrl: ctx.imageDataUrl,
         hint: hint ?? undefined,
         deliverTo: deliverTo ?? undefined,
         deliverBy: deliverBy ?? undefined,
       });
+      return rationale && !("error" in res) ? { ...res, rationale } : res;
     },
     toModelOutput: ({ output }) => ({ type: "text", value: visualResultToModel(output) }),
   }),
