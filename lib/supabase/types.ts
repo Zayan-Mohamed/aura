@@ -55,3 +55,15 @@ export type OrderRow = {
   expires_at: string | null;
   created_at: string;
 };
+
+export type OccasionRow = {
+  id: string;
+  user_id: string;
+  label: string;
+  occasion_date: string;
+  recipient_name: string;
+  recipient_city: string;
+  notes: string;
+  last_notified_year: number | null;
+  created_at: string;
+};

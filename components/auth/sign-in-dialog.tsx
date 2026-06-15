@@ -43,8 +43,16 @@ export function SignInDialog({ open, onClose }: { open: boolean; onClose: () => 
         if (error) throw error;
         if (data.session) {
           onClose();
+        } else if (data.user && (data.user.identities?.length ?? 0) === 0) {
+          // Supabase returns a user with an EMPTY identities array when the email
+          // already has an account (anti-enumeration) — and sends no confirmation
+          // email. Tell the shopper plainly instead of "check your inbox".
+          setError(
+            "This email already has an account. Try signing in instead — or continue with Google if that's how you joined.",
+          );
+          setMode("signin");
         } else {
-          setNotice("Check your inbox to confirm your email, then sign in.");
+          setNotice("Check your inbox to confirm your email (it can take a minute — also check spam), then sign in.");
           setMode("signin");
         }
       } else {

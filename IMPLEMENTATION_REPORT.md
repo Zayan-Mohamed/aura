@@ -181,6 +181,35 @@ Nothing below blocks the build; these are runtime / ops / decision items.
 
 ---
 
+## 4b. Scheduled proactive emails (SendGrid + Supabase cron)
+
+Built the full proactive-email system the brief called for — abandoned-cart,
+occasion reminders, and order delivery follow-ups — on a Supabase Edge Function +
+`pg_cron`, sending via SendGrid (free tier, 100/day cap). Templates are branded
+and **emoji-free**.
+
+**Done (deployed to your Supabase project):**
+- Migration `supabase/migrations/20260616120000_aura_proactive_emails.sql` —
+  `occasions` + `email_log` tables, `baskets.reminded_at` / `orders.followup_sent_at`,
+  owner-only RLS, `pg_cron` + `pg_net` enabled, and `service_role`-only `due_*`
+  query functions. **Applied.**
+- Edge Function `supabase/functions/proactive-emails/index.ts` — 3 jobs, shared
+  no-emoji HTML template, daily-cap enforcement, `x-cron-secret` auth, safe no-op
+  until configured. **Deployed (ACTIVE).**
+- In-app **Occasion reminders** UI (profile drawer) + Supabase CRUD
+  (`occasions-section.tsx`, `cloud.ts`, types).
+
+**Needs you — see `supabase/PROACTIVE_EMAILS.md` for exact steps:**
+1. SendGrid **Single Sender Verification** (no domain needed — your earlier
+   blocker; domain auth is the *other* option, skip it).
+2. Set 4 Edge Function secrets (`SENDGRID_API_KEY`, `MAIL_FROM`, `MAIL_FROM_NAME`,
+   `CRON_SECRET`).
+3. Run one `cron.schedule(...)` SQL to start the hourly job.
+4. (Verify-email) Point Supabase Auth at SendGrid SMTP, **or** disable email
+   confirmation. Google sign-in already works regardless.
+
+Until those are done the function no-ops — nothing sends by accident.
+
 ## 5. Files touched
 
 **New**

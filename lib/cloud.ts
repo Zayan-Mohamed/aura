@@ -8,7 +8,7 @@ import type { ShopperProfile } from "@/lib/use-profile";
 import { EMPTY_PROFILE } from "@/lib/use-profile";
 import type { BasketItem } from "@/lib/use-basket";
 import type { AuraUIMessage } from "@/lib/ai-types";
-import type { ConversationRow, OrderRow, ProfileRow } from "@/lib/supabase/types";
+import type { ConversationRow, OccasionRow, OrderRow, ProfileRow } from "@/lib/supabase/types";
 
 type DB = SupabaseClient;
 
@@ -220,6 +220,59 @@ export function ordersFromMessages(
     }
   }
   return out;
+}
+
+// --------------------------------------------------------------- occasions
+
+/** A saved gifting occasion (birthday, anniversary) the shopper wants reminding about. */
+export type Occasion = {
+  id: string;
+  label: string;
+  occasionDate: string; // YYYY-MM-DD
+  recipientName: string;
+  recipientCity: string;
+};
+
+function toOccasion(r: OccasionRow): Occasion {
+  return {
+    id: r.id,
+    label: r.label,
+    occasionDate: r.occasion_date,
+    recipientName: r.recipient_name ?? "",
+    recipientCity: r.recipient_city ?? "",
+  };
+}
+
+export async function listOccasions(db: DB, userId: string): Promise<Occasion[]> {
+  const { data } = await db
+    .from("occasions")
+    .select("id,label,occasion_date,recipient_name,recipient_city,notes,last_notified_year,created_at,user_id")
+    .eq("user_id", userId)
+    .order("occasion_date", { ascending: true });
+  return ((data as OccasionRow[]) ?? []).map(toOccasion);
+}
+
+export async function addOccasion(
+  db: DB,
+  userId: string,
+  o: { label: string; occasionDate: string; recipientName?: string; recipientCity?: string },
+): Promise<Occasion | null> {
+  const { data } = await db
+    .from("occasions")
+    .insert({
+      user_id: userId,
+      label: o.label,
+      occasion_date: o.occasionDate,
+      recipient_name: o.recipientName ?? "",
+      recipient_city: o.recipientCity ?? "",
+    })
+    .select("id,label,occasion_date,recipient_name,recipient_city,notes,last_notified_year,created_at,user_id")
+    .single<OccasionRow>();
+  return data ? toOccasion(data) : null;
+}
+
+export async function deleteOccasion(db: DB, id: string) {
+  await db.from("occasions").delete().eq("id", id);
 }
 
 /** Recent orders for the signed-in user (newest first) — powers reorder. */

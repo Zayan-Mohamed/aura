@@ -7,6 +7,8 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Menu, X, MapPin, User, Phone, Home, Languages, NotebookPen, ArrowRight, Trash2 } from "lucide-react";
 import type { ShopperProfile, ShopperLanguage } from "@/lib/use-profile";
 import { profileHasContent } from "@/lib/use-profile";
+import type { Occasion } from "@/lib/cloud";
+import { OccasionsSection } from "./occasions-section";
 import { cn } from "@/lib/utils";
 
 const LANGUAGES: { value: ShopperLanguage; label: string; hint?: string }[] = [
@@ -47,10 +49,20 @@ export function ProfileDrawer({
   profile,
   onUpdate,
   onClear,
+  signedIn = false,
+  occasions = [],
+  onAddOccasion,
+  onDeleteOccasion,
+  onRequireAuth,
 }: {
   profile: ShopperProfile;
   onUpdate: (patch: Partial<ShopperProfile>) => void;
   onClear: () => void;
+  signedIn?: boolean;
+  occasions?: Occasion[];
+  onAddOccasion?: (o: { label: string; occasionDate: string; recipientName: string; recipientCity: string }) => void;
+  onDeleteOccasion?: (id: string) => void;
+  onRequireAuth?: () => void;
 }) {
   const [open, setOpen] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
@@ -228,6 +240,14 @@ export function ProfileDrawer({
                     <Trash2 className="size-3.5" /> Clear details
                   </button>
                 )}
+
+                <OccasionsSection
+                  signedIn={signedIn}
+                  occasions={occasions}
+                  onAdd={(o) => onAddOccasion?.(o)}
+                  onDelete={(id) => onDeleteOccasion?.(id)}
+                  onRequireAuth={() => onRequireAuth?.()}
+                />
               </div>
 
               {/* Footer — navigate to the guide */}

@@ -85,6 +85,7 @@ export function AuraChat() {
   const [signInOpen, setSignInOpen] = React.useState(false);
   const [conversations, setConversations] = React.useState<ConversationRow[]>([]);
   const [orders, setOrders] = React.useState<OrderRow[]>([]);
+  const [occasions, setOccasions] = React.useState<cloud.Occasion[]>([]);
   const [conversationId, setConversationId] = React.useState<string | null>(null);
 
   // Latest-value refs so the persistence effect can read without re-subscribing.
@@ -106,6 +107,28 @@ export function AuraChat() {
     if (!user) return;
     setOrders(await cloud.listOrders(supabase, user.id));
   }, [supabase, user]);
+
+  const refreshOccasions = React.useCallback(async () => {
+    if (!user) return;
+    setOccasions(await cloud.listOccasions(supabase, user.id));
+  }, [supabase, user]);
+
+  const addOccasion = React.useCallback(
+    async (o: { label: string; occasionDate: string; recipientName: string; recipientCity: string }) => {
+      if (!user) return;
+      const created = await cloud.addOccasion(supabase, user.id, o);
+      if (created) setOccasions((prev) => [...prev, created].sort((a, b) => a.occasionDate.localeCompare(b.occasionDate)));
+    },
+    [supabase, user],
+  );
+
+  const deleteOccasion = React.useCallback(
+    async (id: string) => {
+      setOccasions((prev) => prev.filter((o) => o.id !== id));
+      await cloud.deleteOccasion(supabase, id);
+    },
+    [supabase],
+  );
 
   // One-tap reorder. Best case: the stored lines carry name/price/image, so we
   // rebuild the basket instantly on the client (no remembering, no model call)
@@ -169,6 +192,7 @@ export function AuraChat() {
       /* eslint-disable react-hooks/set-state-in-effect */
       setConversations([]);
       setOrders([]);
+      setOccasions([]);
       setConversationId(null);
       /* eslint-enable react-hooks/set-state-in-effect */
       conversationIdRef.current = null;
@@ -190,11 +214,12 @@ export function AuraChat() {
 
       if (!cancelled) await refreshConversations();
       if (!cancelled) await refreshOrders();
+      if (!cancelled) await refreshOccasions();
     })();
     return () => {
       cancelled = true;
     };
-  }, [user, supabase, update, refreshConversations, refreshOrders]);
+  }, [user, supabase, update, refreshConversations, refreshOrders, refreshOccasions]);
 
   // --- write-through profile + basket changes while signed in (debounced) ---
   React.useEffect(() => {
@@ -333,7 +358,16 @@ export function AuraChat() {
             )}
             <ThemeToggle />
             <BasketDrawer onCheckout={ask} />
-            <ProfileDrawer profile={profile} onUpdate={update} onClear={clear} />
+            <ProfileDrawer
+              profile={profile}
+              onUpdate={update}
+              onClear={clear}
+              signedIn={!!user}
+              occasions={occasions}
+              onAddOccasion={addOccasion}
+              onDeleteOccasion={deleteOccasion}
+              onRequireAuth={() => setSignInOpen(true)}
+            />
           </div>
         </div>
       </header>
