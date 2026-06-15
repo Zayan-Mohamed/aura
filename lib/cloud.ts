@@ -119,10 +119,26 @@ export async function saveMessages(
 
 // ----------------------------------------------------------------- orders
 
+/**
+ * A persisted order line. We store the productId + quantity (from the createOrder
+ * tool input) AND, when we can match it against the basket at checkout time, the
+ * name/price/image — so one-tap reorder can rebuild the basket with real items
+ * instead of asking the shopper to remember what they bought.
+ */
+export type SavedOrderItem = {
+  productId: string;
+  quantity: number;
+  icingText?: string;
+  name?: string;
+  price?: BasketItem["price"];
+  imageUrl?: string;
+  url?: string;
+};
+
 type OrderToSave = {
   orderRef: string;
   checkoutUrl?: string;
-  items?: unknown;
+  items?: SavedOrderItem[];
   summary?: unknown;
   recipient?: unknown;
   delivery?: unknown;
@@ -151,8 +167,16 @@ export async function saveOrder(
   );
 }
 
-/** Pull any createOrder tool outputs out of an assistant message's parts. */
-export function ordersFromMessages(messages: AuraUIMessage[]): OrderToSave[] {
+/**
+ * Pull any createOrder tool outputs out of an assistant message's parts. The
+ * cart (productId + quantity) lives on the tool INPUT (the output omits it), so
+ * we read it there; passing the current `basket` lets us enrich each line with
+ * the name/price/image (matched by productId) for a richer reorder later.
+ */
+export function ordersFromMessages(
+  messages: AuraUIMessage[],
+  basket: BasketItem[] = [],
+): OrderToSave[] {
   const out: OrderToSave[] = [];
   for (const m of messages) {
     if (m.role !== "assistant") continue;
@@ -164,12 +188,28 @@ export function ordersFromMessages(messages: AuraUIMessage[]): OrderToSave[] {
       if (part?.type === "tool-createOrder" && part.output && !("error" in part.output)) {
         const o = part.output;
         if (typeof o.orderRef === "string") {
+          const cart = (Array.isArray(part.input?.cart) ? part.input!.cart : []) as {
+            productId?: string;
+            quantity?: number;
+            icingText?: string;
+          }[];
+          const items: SavedOrderItem[] = cart
+            .filter((c) => c.productId)
+            .map((c) => {
+              const match = basket.find((b) => b.productId === c.productId);
+              return {
+                productId: c.productId as string,
+                quantity: c.quantity ?? 1,
+                ...(c.icingText ? { icingText: c.icingText } : {}),
+                ...(match
+                  ? { name: match.name, price: match.price, imageUrl: match.imageUrl, url: match.url }
+                  : {}),
+              };
+            });
           out.push({
             orderRef: o.orderRef,
             checkoutUrl: o.checkoutUrl as string | undefined,
-            // The cart the order was built from lives on the tool INPUT — capture
-            // it so we can offer one-tap reorder later (the output omits items).
-            items: Array.isArray(part.input?.cart) ? part.input!.cart : [],
+            items,
             recipient: part.input?.recipient,
             delivery: part.input?.delivery,
             summary: o.summary,

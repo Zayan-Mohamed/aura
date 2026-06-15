@@ -107,24 +107,56 @@ export function AuraChat() {
     setOrders(await cloud.listOrders(supabase, user.id));
   }, [supabase, user]);
 
-  // One-tap reorder: ask Aura to rebuild a past order's basket and check out.
+  // One-tap reorder. Best case: the stored lines carry name/price/image, so we
+  // rebuild the basket instantly on the client (no remembering, no model call)
+  // and nudge checkout. Fallback: only productIds were stored → ask Aura to look
+  // them up by ID. Last resort (legacy orders with nothing): a plain prompt.
   const reorder = React.useCallback(
     (order: OrderRow) => {
       const items = (Array.isArray(order.items) ? order.items : []) as {
         productId?: string;
         quantity?: number;
+        name?: string;
+        price?: { amount: number | null; currency: string };
+        imageUrl?: string;
+        url?: string;
       }[];
-      const lines = items
-        .filter((i) => i.productId)
-        .map((i) => `- ${i.quantity ?? 1}× product ${i.productId}`)
-        .join("\n");
-      if (!lines) {
+      const usable = items.filter((i) => i.productId);
+
+      if (usable.length === 0) {
         ask("I'd like to reorder something I bought before — can you help me find it again?");
+        setSidebarOpen(false);
         return;
       }
-      ask(
-        `I'd like to reorder a previous order. Please look these up, add them to a fresh basket, and walk me through checkout again:\n${lines}`,
-      );
+
+      const withDetails = usable.filter((i) => i.name && i.price);
+      if (withDetails.length === usable.length) {
+        // Full data — rebuild the basket directly and ask Aura to resume checkout.
+        for (const i of withDetails) {
+          basketStore.add(
+            {
+              productId: i.productId!,
+              name: i.name!,
+              price: i.price!,
+              imageUrl: i.imageUrl,
+              url: i.url,
+            },
+            i.quantity ?? 1,
+          );
+        }
+        const names = withDetails.map((i) => `${i.quantity ?? 1}× ${i.name}`).join(", ");
+        ask(
+          `I've added my previous order back to the basket (${names}). Please confirm delivery to my area and walk me through secure checkout again.`,
+        );
+      } else {
+        // Only IDs stored — let Aura fetch each and rebuild.
+        const lines = usable
+          .map((i) => `- ${i.quantity ?? 1}× ${i.name ?? `product ${i.productId}`} (id: ${i.productId})`)
+          .join("\n");
+        ask(
+          `I'd like to reorder a previous order. Please look these up, add them to a fresh basket, and walk me through checkout again:\n${lines}`,
+        );
+      }
       setSidebarOpen(false);
     },
     [ask],
@@ -197,7 +229,8 @@ export function AuraChat() {
       }
       await cloud.saveMessages(supabase, convId, user.id, unsaved);
       for (const m of unsaved) savedIds.current.add(m.id);
-      const newOrders = cloud.ordersFromMessages(unsaved);
+      // Snapshot the basket so each saved line carries name/price/image for reorder.
+      const newOrders = cloud.ordersFromMessages(unsaved, basketStore.snapshot());
       for (const o of newOrders) {
         await cloud.saveOrder(supabase, user.id, convId, o);
       }
