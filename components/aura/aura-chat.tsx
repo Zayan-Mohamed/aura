@@ -4,7 +4,7 @@ import * as React from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { AnimatePresence, motion } from "motion/react";
-import { Moon, Sun, RotateCcw, AlertTriangle, PanelLeft } from "lucide-react";
+import { Moon, Sun, RotateCcw, AlertTriangle, PanelLeft, Share2, MoreVertical } from "lucide-react";
 import type { AuraUIMessage } from "@/lib/ai-types";
 import type { ConversationRow, OrderRow } from "@/lib/supabase/types";
 import { AuraMark } from "./aura-mark";
@@ -17,6 +17,11 @@ import { TypingIndicator } from "./typing";
 import { ProfileDrawer } from "./profile-drawer";
 import { BasketDrawer } from "./basket-drawer";
 import { LeftSidebar } from "./left-sidebar";
+import { TierBadge } from "./tier-badge";
+import { TierSidebar } from "./tier-sidebar";
+import { ReorderDialog } from "./reorder-dialog";
+import { UsualsCarousel, usualsFromOrders } from "./usuals-carousel";
+import { ShareDialog } from "./share-dialog";
 import { SignInDialog } from "@/components/auth/sign-in-dialog";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useProfile, profileHasContent } from "@/lib/use-profile";
@@ -24,8 +29,23 @@ import { useBasket, basketStore } from "@/lib/use-basket";
 import { visualSearchEnabled } from "@/lib/flags";
 import * as cloud from "@/lib/cloud";
 
-function ThemeToggle() {
+/**
+ * Header overflow menu — keeps the bar uncluttered on mobile by tucking the
+ * secondary actions (new chat, share, theme) behind one ⋮ button, so the brand
+ * + tier badge and the core Basket/Profile controls stay visible.
+ */
+function HeaderMenu({
+  empty,
+  onNewChat,
+  onShare,
+}: {
+  empty: boolean;
+  onNewChat: () => void;
+  onShare: () => void;
+}) {
+  const [open, setOpen] = React.useState(false);
   const [dark, setDark] = React.useState(false);
+
   React.useEffect(() => {
     const prefers = window.matchMedia("(prefers-color-scheme: dark)").matches;
     // One-time sync of theme state with the OS preference on mount.
@@ -33,20 +53,86 @@ function ThemeToggle() {
     setDark(prefers);
     document.documentElement.classList.toggle("dark", prefers);
   }, []);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  const toggleTheme = () =>
+    setDark((d) => {
+      document.documentElement.classList.toggle("dark", !d);
+      return !d;
+    });
+
+  const item =
+    "flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted";
+
   return (
-    <button
-      type="button"
-      aria-label="Toggle theme"
-      onClick={() => {
-        setDark((d) => {
-          document.documentElement.classList.toggle("dark", !d);
-          return !d;
-        });
-      }}
-      className="grid size-9 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-    >
-      {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
-    </button>
+    <div className="relative">
+      <button
+        type="button"
+        aria-label="More options"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className="grid size-9 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      >
+        <MoreVertical className="size-4" />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden />
+            <motion.div
+              role="menu"
+              initial={{ opacity: 0, y: -6, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.97 }}
+              transition={{ duration: 0.15 }}
+              className="absolute right-0 top-full z-50 mt-2 w-48 rounded-2xl border border-border bg-background p-1.5 shadow-xl"
+            >
+              {!empty && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={item}
+                  onClick={() => {
+                    onNewChat();
+                    setOpen(false);
+                  }}
+                >
+                  <RotateCcw className="size-4 text-muted-foreground" /> New chat
+                </button>
+              )}
+              {!empty && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={item}
+                  onClick={() => {
+                    onShare();
+                    setOpen(false);
+                  }}
+                >
+                  <Share2 className="size-4 text-muted-foreground" /> Share chat
+                </button>
+              )}
+              <button type="button" role="menuitem" className={item} onClick={toggleTheme}>
+                {dark ? (
+                  <Sun className="size-4 text-muted-foreground" />
+                ) : (
+                  <Moon className="size-4 text-muted-foreground" />
+                )}
+                {dark ? "Light mode" : "Dark mode"}
+              </button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -60,6 +146,8 @@ export function AuraChat() {
   const { supabase, user, signOut } = useAuth();
   const { profile, update, clear } = useProfile();
   const { items: basketItems } = useBasket();
+  // Verified (paid) orders → Aura Prestige tier, shown on the header badge.
+  const [orderCount, setOrderCount] = React.useState(0);
 
   const transport = React.useMemo(
     () => new DefaultChatTransport<AuraUIMessage>({ api: "/api/chat" }),
@@ -82,7 +170,10 @@ export function AuraChat() {
 
   // --- sidebar / auth UI state ---
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [tierOpen, setTierOpen] = React.useState(false);
   const [signInOpen, setSignInOpen] = React.useState(false);
+  const [shareOpen, setShareOpen] = React.useState(false);
+  const [reorderOrder, setReorderOrder] = React.useState<OrderRow | null>(null);
   const [conversations, setConversations] = React.useState<ConversationRow[]>([]);
   const [orders, setOrders] = React.useState<OrderRow[]>([]);
   const [occasions, setOccasions] = React.useState<cloud.Occasion[]>([]);
@@ -130,60 +221,13 @@ export function AuraChat() {
     [supabase],
   );
 
-  // One-tap reorder. Best case: the stored lines carry name/price/image, so we
-  // rebuild the basket instantly on the client (no remembering, no model call)
-  // and nudge checkout. Fallback: only productIds were stored → ask Aura to look
-  // them up by ID. Last resort (legacy orders with nothing): a plain prompt.
-  const reorder = React.useCallback(
-    (order: OrderRow) => {
-      const items = (Array.isArray(order.items) ? order.items : []) as {
-        productId?: string;
-        quantity?: number;
-        name?: string;
-        price?: { amount: number | null; currency: string };
-        imageUrl?: string;
-        url?: string;
-      }[];
-      const usable = items.filter((i) => i.productId);
-
-      if (usable.length === 0) {
-        ask("I'd like to reorder something I bought before — can you help me find it again?");
-        setSidebarOpen(false);
-        return;
-      }
-
-      const withDetails = usable.filter((i) => i.name && i.price);
-      if (withDetails.length === usable.length) {
-        // Full data — rebuild the basket directly and ask Aura to resume checkout.
-        for (const i of withDetails) {
-          basketStore.add(
-            {
-              productId: i.productId!,
-              name: i.name!,
-              price: i.price!,
-              imageUrl: i.imageUrl,
-              url: i.url,
-            },
-            i.quantity ?? 1,
-          );
-        }
-        const names = withDetails.map((i) => `${i.quantity ?? 1}× ${i.name}`).join(", ");
-        ask(
-          `I've added my previous order back to the basket (${names}). Please confirm delivery to my area and walk me through secure checkout again.`,
-        );
-      } else {
-        // Only IDs stored — let Aura fetch each and rebuild.
-        const lines = usable
-          .map((i) => `- ${i.quantity ?? 1}× ${i.name ?? `product ${i.productId}`} (id: ${i.productId})`)
-          .join("\n");
-        ask(
-          `I'd like to reorder a previous order. Please look these up, add them to a fresh basket, and walk me through checkout again:\n${lines}`,
-        );
-      }
-      setSidebarOpen(false);
-    },
-    [ask],
-  );
+  // One-tap reorder → open the confirmation dialog, which rebuilds the order
+  // server-side (saved items + address, soonest date) and returns a pay link
+  // directly. No AI round-trip, no questions.
+  const reorder = React.useCallback((order: OrderRow) => {
+    setReorderOrder(order);
+    setSidebarOpen(false);
+  }, []);
 
   // --- on sign-in: pull profile + basket from the cloud (or push local up) ---
   React.useEffect(() => {
@@ -192,6 +236,7 @@ export function AuraChat() {
       /* eslint-disable react-hooks/set-state-in-effect */
       setConversations([]);
       setOrders([]);
+      setOrderCount(0);
       setOccasions([]);
       setConversationId(null);
       /* eslint-enable react-hooks/set-state-in-effect */
@@ -214,6 +259,8 @@ export function AuraChat() {
 
       if (!cancelled) await refreshConversations();
       if (!cancelled) await refreshOrders();
+      // Total order count → Aura Prestige tier (set inline; the list is capped).
+      if (!cancelled) setOrderCount(await cloud.countOrders(supabase, user.id));
       if (!cancelled) await refreshOccasions();
     })();
     return () => {
@@ -261,7 +308,21 @@ export function AuraChat() {
       }
       await cloud.touchConversation(supabase, convId);
       if (!cancelled) await refreshConversations();
+      // A fresh checkout link updates the reorder list (but NOT the tier — only
+      // a verified PAID order does that).
       if (!cancelled && newOrders.length) await refreshOrders();
+      // A verified trackOrder credits the tier; lift the new count off its result
+      // so the badge updates live without a reload.
+      let tierCount: number | undefined;
+      for (const m of unsaved) {
+        if (m.role !== "assistant") continue;
+        for (const part of m.parts as { type?: string; output?: { loyalty?: { count?: number } | null } }[]) {
+          if (part?.type === "tool-trackOrder" && typeof part.output?.loyalty?.count === "number") {
+            tierCount = part.output.loyalty.count;
+          }
+        }
+      }
+      if (!cancelled && typeof tierCount === "number") setOrderCount(tierCount);
     })();
     return () => {
       cancelled = true;
@@ -296,6 +357,34 @@ export function AuraChat() {
     [supabase, newChat, refreshConversations],
   );
 
+  // Edit a user turn (ChatGPT-style): drop it and everything after, purge those
+  // from the saved conversation, then re-ask the new text — Aura regenerates.
+  const editMessage = React.useCallback(
+    (messageId: string, next: string) => {
+      const all = messagesRef.current;
+      const idx = all.findIndex((m) => m.id === messageId);
+      if (idx === -1) return;
+      const removedIds = all.slice(idx).map((m) => m.id);
+      stop();
+      setMessages(all.slice(0, idx));
+      for (const id of removedIds) savedIds.current.delete(id);
+      if (user) void cloud.deleteMessages(supabase, removedIds);
+      ask(next);
+    },
+    [stop, setMessages, ask, user, supabase],
+  );
+
+  // Mint a public, snapshot share link for the current conversation. We strip
+  // metadata (image data URLs) and keep just role + parts so the recipient sees
+  // the transcript + product cards. Signed-in only (the row is owner-scoped).
+  const shareChat = React.useCallback(async (): Promise<string | null> => {
+    if (!user) return null;
+    const snapshot = messagesRef.current.map((m) => ({ id: m.id, role: m.role, parts: m.parts }));
+    if (snapshot.length === 0) return null;
+    const token = await cloud.createShare(supabase, user.id, firstUserText(messagesRef.current), snapshot);
+    return token ? `${window.location.origin}/share/${token}` : null;
+  }, [user, supabase]);
+
   // Keep the latest turn in view while content streams in.
   const endRef = React.useRef<HTMLDivElement>(null);
   React.useEffect(() => {
@@ -303,6 +392,10 @@ export function AuraChat() {
   }, [messages, status]);
 
   const empty = messages.length === 0;
+
+  // "Your usuals" — products pulled from the signed-in shopper's past orders,
+  // de-duplicated, so the home screen can offer one-tap re-add without asking.
+  const usuals = React.useMemo(() => usualsFromOrders(orders), [orders]);
 
   return (
     <div className="relative flex min-h-dvh flex-col">
@@ -320,6 +413,22 @@ export function AuraChat() {
         onSignIn={() => setSignInOpen(true)}
         onSignOut={signOut}
       />
+      <TierSidebar
+        open={tierOpen}
+        onClose={() => setTierOpen(false)}
+        signedIn={!!user}
+        orderCount={orderCount}
+        onSignIn={() => {
+          setTierOpen(false);
+          setSignInOpen(true);
+        }}
+      />
+      <ReorderDialog
+        order={reorderOrder}
+        onClose={() => setReorderOrder(null)}
+        onReordered={refreshOrders}
+      />
+      <ShareDialog open={shareOpen} onClose={() => setShareOpen(false)} onCreate={shareChat} />
       <SignInDialog open={signInOpen} onClose={() => setSignInOpen(false)} />
 
       {/* Header */}
@@ -343,20 +452,14 @@ export function AuraChat() {
                 Kapruka concierge
               </p>
             </div>
+            <TierBadge orderCount={user ? orderCount : null} onClick={() => setTierOpen(true)} />
           </div>
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-            {!empty && (
-              <button
-                type="button"
-                onClick={newChat}
-                aria-label="New chat"
-                className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-border px-2.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-3"
-              >
-                <RotateCcw className="size-3.5" />
-                <span className="hidden sm:inline">New chat</span>
-              </button>
-            )}
-            <ThemeToggle />
+            <HeaderMenu
+              empty={empty}
+              onNewChat={newChat}
+              onShare={() => (user ? setShareOpen(true) : setSignInOpen(true))}
+            />
             <BasketDrawer onCheckout={ask} />
             <ProfileDrawer
               profile={profile}
@@ -380,11 +483,14 @@ export function AuraChat() {
         )}
         <div className="relative z-10 mx-auto flex min-h-full w-full max-w-7xl flex-col px-5 pb-40 pt-6 sm:px-8">
           {empty ? (
-            <Hero onAsk={ask} />
+            <>
+              <Hero onAsk={ask} />
+              {!!user && usuals.length > 0 && <UsualsCarousel items={usuals} />}
+            </>
           ) : (
             <div className="flex flex-col gap-6">
               {messages.map((m) => (
-                <ChatMessage key={m.id} message={m} onAsk={ask} />
+                <ChatMessage key={m.id} message={m} onAsk={ask} onEdit={editMessage} />
               ))}
 
               {/* Contextual follow-up chips under the latest assistant reply */}

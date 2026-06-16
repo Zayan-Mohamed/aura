@@ -8,8 +8,11 @@
  */
 import { tool } from "ai";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import * as kapruka from "./kapruka";
 import { visualSearch } from "./visual-search";
+import { countOrders, recordVerifiedOrder } from "./cloud";
+import { tierForOrders, type TierId } from "./tiers";
 import {
   searchResultToModel,
   visualResultToModel,
@@ -18,12 +21,71 @@ import {
 } from "./model-output";
 
 /**
- * Per-request context injected into the tools. `imageDataUrl` is the shopper's
- * uploaded photo for the current turn (set by the chat route from the request
- * body) — the visualSearch tool reads it from here rather than from model args,
- * since the chat model can't reliably pass image bytes.
+ * Per-request context injected into the tools.
+ * - `imageDataUrl`: the shopper's uploaded photo for the current turn (set by
+ *   the chat route) — visualSearch reads it from here, not from model args.
+ * - `db` / `userId`: the signed-in shopper's Supabase session + id, so a
+ *   confirmed track_order can credit their Aura Prestige tier. Absent for guests.
  */
-export type AuraToolContext = { imageDataUrl?: string };
+export type AuraToolContext = { imageDataUrl?: string; db?: SupabaseClient; userId?: string };
+
+/** Kapruka statuses that are NOT a completed, paid purchase — never credited. */
+const UNPAID_STATUSES = new Set([
+  "cancelled",
+  "canceled",
+  "refunded",
+  "rejected",
+  "failed",
+  "void",
+  "expired",
+  "pending",
+  "pending-payment",
+  "awaiting-payment",
+  "unpaid",
+]);
+
+export type LoyaltyResult = {
+  /** A brand-new verified order was recorded this call. */
+  credited: boolean;
+  /** The tier name moved up as a result. */
+  leveledUp: boolean;
+  /** Total verified (paid) orders now. */
+  count: number;
+  tierId: TierId;
+  tierName: string;
+};
+
+/**
+ * Credit a signed-in shopper's tier for a track_order that came back as a real,
+ * paid order. Only reachable with a valid Kapruka order number (track_order
+ * succeeded), recorded de-duplicated + globally unique — so it can't be farmed.
+ * Returns null for guests / cancelled orders (no credit, nothing to show).
+ */
+async function creditLoyalty(
+  ctx: AuraToolContext,
+  tracking: kapruka.OrderTracking,
+): Promise<LoyaltyResult | null> {
+  if (!ctx.db || !ctx.userId) return null; // guest — can't earn until signed in
+  const orderNumber = tracking.orderNumber?.trim();
+  if (!orderNumber) return null;
+  if (UNPAID_STATUSES.has((tracking.status ?? "").toLowerCase())) return null;
+
+  const before = await countOrders(ctx.db, ctx.userId);
+  const credited = await recordVerifiedOrder(ctx.db, ctx.userId, {
+    orderNumber,
+    status: tracking.status,
+    amount: tracking.amount,
+    recipientName: tracking.recipient?.name ?? null,
+  });
+  const count = credited ? before + 1 : before;
+  return {
+    credited,
+    leveledUp: credited && tierForOrders(count).id !== tierForOrders(before).id,
+    count,
+    tierId: tierForOrders(count).id,
+    tierName: tierForOrders(count).name,
+  };
+}
 
 export function makeAuraTools(ctx: AuraToolContext = {}) {
   return {
@@ -160,11 +222,17 @@ export function makeAuraTools(ctx: AuraToolContext = {}) {
 
   trackOrder: tool({
     description:
-      "Look up the status and delivery timeline of a paid Kapruka order by its order number (from the confirmation email — NOT the pre-payment order_ref).",
+      "Look up the status and delivery timeline of a paid Kapruka order by its order number (from the confirmation email — NOT the pre-payment order_ref). A successful lookup also VERIFIES the purchase and counts it toward the shopper's Aura Prestige tier — so when a signed-in shopper mentions they've paid/received an order, invite them to share that order number and call this.",
     inputSchema: z.object({
       orderNumber: z.string().describe("Kapruka order number, e.g. 'VIMP34456CB2'."),
     }),
-    execute: async ({ orderNumber }) => kapruka.trackOrder(orderNumber),
+    execute: async ({ orderNumber }) => {
+      const res = await kapruka.trackOrder(orderNumber);
+      if ("error" in res) return res;
+      // Credit the tier as a side-effect — only a real, paid order reaches here.
+      const loyalty = await creditLoyalty(ctx, res);
+      return { ...res, loyalty };
+    },
   }),
 
   visualSearch: tool({

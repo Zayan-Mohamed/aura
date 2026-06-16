@@ -28,7 +28,9 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { AuraMark } from "./aura-mark";
+import { TIER_ICONS } from "./tier-badge";
 import { AuroraBackground, Reveal, Stagger, StaggerItem, PulseDot, FlowArrow } from "./fx";
+import { TIERS } from "@/lib/tiers";
 import { cn } from "@/lib/utils";
 
 /* ---------------------------------------------------------------- helpers */
@@ -189,6 +191,32 @@ function MiniFlow({ steps }: { steps: { icon: React.ElementType; label: string; 
   );
 }
 
+/** The five Aura Prestige rungs, rendered from the shared tier definitions. */
+function TierLadder() {
+  return (
+    <Stagger className="mt-6 grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      {TIERS.map((t) => {
+        const Icon = TIER_ICONS[t.id];
+        return (
+          <StaggerItem key={t.id} lift>
+            <div className={cn("flex h-full flex-col rounded-2xl border border-border bg-card/70 p-4 ring-1 ring-inset", t.color.ring)}>
+              <span className={cn("grid size-9 place-items-center rounded-xl ring-1 ring-inset", t.color.chip, t.color.ring)}>
+                <Icon className="size-4" />
+              </span>
+              <p className={cn("font-heading mt-3 text-base leading-none", t.color.text)}>{t.name}</p>
+              <p className="mt-1 text-[0.65rem] font-medium uppercase tracking-widest text-muted-foreground">
+                {t.minOrders === 0 ? "Entry" : `${t.minOrders}+ orders`}
+              </p>
+              <p className="mt-1.5 text-xs font-semibold text-foreground/85">{t.unlock}</p>
+              <p className="mt-1 text-[0.72rem] leading-relaxed text-muted-foreground">{t.tagline}</p>
+            </div>
+          </StaggerItem>
+        );
+      })}
+    </Stagger>
+  );
+}
+
 /* ------------------------------------------------------------------- data */
 
 const ARCH: { label: string; tone: Tone; nodes: NodeT[] }[] = [
@@ -290,6 +318,38 @@ const VISION: Stage[] = [
   },
 ];
 
+const PRESTIGE: Stage[] = [
+  {
+    tag: "Browser",
+    title: "Aura builds your checkout",
+    body: "When you confirm an order, Aura mints a real 60-minute Kapruka pay link. Creating a link earns nothing on its own — only a paid order ever counts.",
+  },
+  {
+    tag: "Kapruka",
+    tone: "rose",
+    title: "You pay — and get an order number",
+    body: "Payment happens in the browser; Kapruka then emails you a unique order number (e.g. VIMP34456CB2). That number is the only proof of a completed purchase.",
+  },
+  {
+    tag: "Chat · trackOrder",
+    tone: "gold",
+    title: "Bring the number back",
+    body: "Share the order number and Aura tracks it. A successful lookup confirms — live, against Kapruka — that the order is real and paid.",
+  },
+  {
+    tag: "Supabase · RLS",
+    tone: "jade",
+    title: "Verified, then counted",
+    body: "The confirmed number is recorded once in verified_orders (globally unique, so it can't be reused or claimed by two accounts). Your tier is simply the count of these rows.",
+  },
+  {
+    tag: "Server-authoritative",
+    tone: "jade",
+    title: "Your tier follows you",
+    body: "The chat route reads your tier from the database on every turn — never from a client-supplied number — and greets you by status, unlocking each tier's perk.",
+  },
+];
+
 const STACK: { icon: React.ElementType; name: string; role: string }[] = [
   { icon: Layers, name: "Next.js 16", role: "App Router, server components, streaming, and the proxy middleware." },
   { icon: Atom, name: "React 19", role: "The component model behind every card and drawer." },
@@ -307,7 +367,8 @@ const TABLES: { name: string; cols: string[]; tag: string; tone: Tone }[] = [
   { name: "baskets", cols: ["items (jsonb)"], tag: "RLS", tone: "jade" },
   { name: "conversations", cols: ["title", "updated_at"], tag: "RLS", tone: "jade" },
   { name: "messages", cols: ["role · parts (jsonb)", "conversation_id"], tag: "RLS", tone: "jade" },
-  { name: "orders", cols: ["order_ref", "summary · checkout_url"], tag: "RLS", tone: "jade" },
+  { name: "orders", cols: ["order_ref · status", "summary · checkout_url"], tag: "RLS", tone: "jade" },
+  { name: "verified_orders", cols: ["order_number (unique)", "→ Aura Prestige tier"], tag: "RLS", tone: "jade" },
   { name: "product_embeddings", cols: ["embedding vector(1024)", "product_id (cache)"], tag: "pgvector", tone: "rose" },
 ];
 
@@ -484,8 +545,31 @@ export function TechContent() {
           </Stagger>
         </section>
 
-        {/* Map 6 — Data model */}
+        {/* Aura Prestige */}
         <section className="py-6">
+          <SectionHead
+            overline="Loyalty, done right"
+            title="Aura Prestige — tiers that can't be gamed"
+            body="Every shopper climbs a five-rung ladder. The twist: only PAID orders count, and each one is verified live against Kapruka — so the perks stay honest and the status is earned."
+          />
+          <TierLadder />
+          <Timeline stages={PRESTIGE} />
+          <Reveal>
+            <div className="flex items-start gap-3 rounded-2xl border border-border bg-card/60 p-4">
+              <ShieldCheck className="mt-0.5 size-5 shrink-0 text-jade" />
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                <span className="font-semibold text-foreground">Why it can&rsquo;t be farmed:</span>{" "}
+                creating a checkout link earns nothing, and Kapruka has no payment webhook — so a
+                tier credit requires a real, emailed order number that <span className="font-mono text-xs">trackOrder</span>{" "}
+                confirms as paid. Numbers are globally unique (one order, one account), de-duplicated
+                on write, and your count is read server-side, never trusted from the browser.
+              </p>
+            </div>
+          </Reveal>
+        </section>
+
+        {/* Map 6 — Data model */}
+        <section className="py-12">
           <SectionHead
             overline="What we store"
             title="The data model"

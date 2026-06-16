@@ -164,7 +164,7 @@ export function ToolPart({
     case "tool-createOrder":
       return out.checkoutUrl ? <CheckoutCard order={out} /> : null;
     case "tool-trackOrder":
-      return out.orderNumber ? <OrderTrackingCard tracking={out} /> : null;
+      return out.orderNumber ? <OrderTrackingCard tracking={out} loyalty={out.loyalty} /> : null;
     case "tool-visualSearch": {
       const products = out.products ?? [];
       if (products.length === 0) {

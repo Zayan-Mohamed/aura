@@ -99,6 +99,12 @@ export async function loadMessages(db: DB, conversationId: string): Promise<Aura
   })) as AuraUIMessage[];
 }
 
+/** Delete specific messages by id — used when an edited turn truncates the chat. */
+export async function deleteMessages(db: DB, ids: string[]) {
+  if (ids.length === 0) return;
+  await db.from("messages").delete().in("id", ids);
+}
+
 /** Idempotent upsert of a turn's messages (keyed by AI SDK message id). */
 export async function saveMessages(
   db: DB,
@@ -275,6 +281,52 @@ export async function deleteOccasion(db: DB, id: string) {
   await db.from("occasions").delete().eq("id", id);
 }
 
+/**
+ * Count of the signed-in user's VERIFIED (paid) orders — drives the Aura
+ * Prestige tier. Prefers the `order_count()` RPC (one round-trip, no row
+ * payload); falls back to a head count of verified_orders if the RPC is
+ * unavailable, so it degrades gracefully. Counts only orders confirmed paid via
+ * Kapruka's track_order (see recordVerifiedOrder), never raw checkout links.
+ */
+export async function countOrders(db: DB, userId: string): Promise<number> {
+  const rpc = await db.rpc("order_count");
+  if (!rpc.error && typeof rpc.data === "number") return rpc.data;
+  const { count } = await db
+    .from("verified_orders")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
+  return count ?? 0;
+}
+
+/**
+ * Record a Kapruka order number the shopper has proven paid (a successful,
+ * non-cancelled track_order). De-duplicated on the globally-unique order_number
+ * (ON CONFLICT DO NOTHING), so re-tracking the same order — or claiming one
+ * already verified by another account — adds nothing. Returns true only when a
+ * brand-new row was inserted (i.e. the tier just gained a step).
+ */
+export async function recordVerifiedOrder(
+  db: DB,
+  userId: string,
+  order: { orderNumber: string; status?: string; amount?: string | null; recipientName?: string | null },
+): Promise<boolean> {
+  const { data, error } = await db
+    .from("verified_orders")
+    .upsert(
+      {
+        user_id: userId,
+        order_number: order.orderNumber,
+        status: order.status ?? "",
+        amount: order.amount ?? null,
+        recipient_name: order.recipientName ?? null,
+      },
+      { onConflict: "order_number", ignoreDuplicates: true },
+    )
+    .select("id");
+  if (error) return false;
+  return Array.isArray(data) && data.length > 0;
+}
+
 /** Recent orders for the signed-in user (newest first) — powers reorder. */
 export async function listOrders(db: DB, userId: string): Promise<OrderRow[]> {
   const { data } = await db
@@ -284,6 +336,29 @@ export async function listOrders(db: DB, userId: string): Promise<OrderRow[]> {
     .order("created_at", { ascending: false })
     .limit(20);
   return (data as OrderRow[]) ?? [];
+}
+
+// ----------------------------------------------------------- shared chats
+
+/**
+ * Mint a public, unguessable share link for the current conversation. Stores a
+ * frozen snapshot of the messages (strip large metadata before calling). Returns
+ * the token, or null on failure. Read back publicly via the get_shared_chat RPC.
+ */
+export async function createShare(
+  db: DB,
+  userId: string,
+  title: string,
+  messages: unknown[],
+): Promise<string | null> {
+  const token = crypto.randomUUID().replace(/-/g, "");
+  const { error } = await db.from("shared_chats").insert({
+    token,
+    user_id: userId,
+    title: (title || "Shared chat").slice(0, 120),
+    messages,
+  });
+  return error ? null : token;
 }
 
 export { EMPTY_PROFILE };

@@ -15,6 +15,8 @@ import type { ShopperProfile } from "@/lib/use-profile";
 import { detectLanguage, latestUserText, type DetectedLanguage } from "@/lib/detect-language";
 import { visualSearchEnabled } from "@/lib/flags";
 import { createClient } from "@/lib/supabase/server";
+import { countOrders } from "@/lib/cloud";
+import { tierForOrders } from "@/lib/tiers";
 
 // MCP client + Groq SDK need the Node runtime.
 export const runtime = "nodejs";
@@ -239,6 +241,21 @@ ${lines.join("\n")}
 - These speed up checkout, but still CONFIRM the exact name, phone, address and date in the conversation before calling createOrder. Never invent anything that's missing here.${langLine}`;
 }
 
+/**
+ * Aura Prestige — a one-line status nudge for a signed-in shopper, derived from
+ * their order count. The count is sent by the client (like the profile); it only
+ * shapes Aura's tone/perk framing, never anything sensitive, so trusting it is
+ * fine and saves a per-turn auth round-trip. Absent for guests → no block.
+ */
+function tierBlock(orderCount?: number): string {
+  if (typeof orderCount !== "number" || !Number.isFinite(orderCount) || orderCount < 0) return "";
+  const tier = tierForOrders(orderCount);
+  return `\n\n## Aura Prestige (signed-in shopper)
+This shopper is an **Aura ${tier.name}** member (${orderCount} verified order${orderCount === 1 ? "" : "s"}). ${tier.agentDirective}
+Keep it to ONE brief, warm, natural mention — never salesy, never a feature dump, and never invent perks beyond the one described.
+EARNING TIER: a shopper climbs only by verified PAID orders. After a checkout link, warmly invite them to come back with their Kapruka order number (from the confirmation email) so you can track it — a successful trackOrder both shows status AND counts that purchase toward their Aura tier. Never imply an unpaid checkout link counts.`;
+}
+
 export async function POST(req: Request) {
   let messages: AuraUIMessage[] = [];
   let profile: Partial<ShopperProfile> | undefined;
@@ -267,21 +284,26 @@ export async function POST(req: Request) {
     return new Response("Missing GROQ_API_KEY", { status: 500 });
   }
 
-  // Visual search requires a signed-in user (protects the Voyage quota from
-  // anonymous abuse). Only verify the session when an image actually came
-  // through, so normal turns pay no auth overhead. The client also locks the
-  // upload icon for guests — this is the server-side enforcement.
-  if (imageDataUrl) {
-    try {
-      const supabase = await createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) imageDataUrl = undefined;
-    } catch {
-      imageDataUrl = undefined;
-    }
+  // Resolve the session once per turn. We need it to (a) gate visual search to
+  // signed-in users, (b) let trackOrder credit the shopper's tier, and (c)
+  // derive their Aura Prestige tier server-side from the DB — never from a
+  // client-supplied count (which a caller could spoof). Guests → db/userId null.
+  let db: Awaited<ReturnType<typeof createClient>> | undefined;
+  let userId: string | undefined;
+  try {
+    db = await createClient();
+    const {
+      data: { user },
+    } = await db.auth.getUser();
+    userId = user?.id;
+  } catch {
+    db = undefined;
+    userId = undefined;
   }
+  if (imageDataUrl && !userId) imageDataUrl = undefined; // visual search is sign-in only
+
+  // Authoritative tier count from the DB (verified/paid orders), signed-in only.
+  const orderCount = db && userId ? await countOrders(db, userId) : undefined;
 
   const hasLangOverride =
     typeof profile?.language === "string" && profile.language in LANG_DIRECTIVE;
@@ -296,9 +318,13 @@ The shopper uploaded a photo as visual inspiration. Call the \`visualSearch\` to
   const system =
     // Keep the language directive LAST so it stays the most salient instruction,
     // even on the image/tool-error path (where the model otherwise drifts dialect).
-    SYSTEM + profileBlock(profile) + imageBlock + detectedLanguageBlock(messages, hasLangOverride);
+    SYSTEM +
+    profileBlock(profile) +
+    tierBlock(orderCount) +
+    imageBlock +
+    detectedLanguageBlock(messages, hasLangOverride);
   const modelMessages = await convertToModelMessages(messages);
-  const tools = makeAuraTools({ imageDataUrl });
+  const tools = makeAuraTools({ imageDataUrl, db, userId });
 
   // Skip the primary while it's cooling down from a recent 429 (best-effort).
   let chain = modelChain();

@@ -1,8 +1,9 @@
 "use client";
 
 import { motion } from "motion/react";
-import { Package, MapPin, Camera, Video, CheckCircle2, Circle } from "lucide-react";
+import { Package, MapPin, Camera, Video, CheckCircle2, Circle, Sparkles } from "lucide-react";
 import type { OrderTracking } from "@/lib/kapruka";
+import type { LoyaltyResult } from "@/lib/tools";
 import { Badge } from "@/components/ui/badge";
 
 const statusTone: Record<string, "gold" | "jade" | "rose" | "default"> = {
@@ -14,7 +15,13 @@ const statusTone: Record<string, "gold" | "jade" | "rose" | "default"> = {
   cancelled: "rose",
 };
 
-export function OrderTrackingCard({ tracking }: { tracking: OrderTracking }) {
+export function OrderTrackingCard({
+  tracking,
+  loyalty,
+}: {
+  tracking: OrderTracking;
+  loyalty?: LoyaltyResult | null;
+}) {
   const tone = statusTone[tracking.status] ?? "default";
   return (
     <motion.div
@@ -32,6 +39,18 @@ export function OrderTrackingCard({ tracking }: { tracking: OrderTracking }) {
         </div>
         <Badge variant={tone}>{tracking.statusDisplay}</Badge>
       </div>
+
+      {/* Verified-order → Aura Prestige credit (only on a newly counted order). */}
+      {loyalty?.credited && (
+        <div className="flex items-center gap-2 border-b border-border bg-gold/8 px-4 py-2 text-xs font-medium text-gold">
+          <Sparkles className="size-3.5 shrink-0" />
+          <span>
+            {loyalty.leveledUp
+              ? `Verified — welcome to Aura ${loyalty.tierName}! ✦`
+              : `Verified — added to your Aura status (${loyalty.count} order${loyalty.count === 1 ? "" : "s"}).`}
+          </span>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3 px-4 py-3 text-sm">
         <div>

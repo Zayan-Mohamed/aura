@@ -16,9 +16,13 @@ import {
   ImagePlus,
   BookmarkCheck,
   Network,
+  Crown,
 } from "lucide-react";
 import { AuraMark } from "./aura-mark";
+import { TIER_ICONS } from "./tier-badge";
 import { AuroraBackground, Reveal, Stagger, StaggerItem } from "./fx";
+import { TIERS } from "@/lib/tiers";
+import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------- data */
 
@@ -63,6 +67,11 @@ const FEATURES = [
     title: "Accounts & saved chats",
     body: "Sign in with email or Google to save your profile, basket and every conversation - pick up on any device.",
   },
+  {
+    icon: Crown,
+    title: "Aura Prestige tiers",
+    body: "Every order you complete lifts you up a private ladder - unlocking perks from a memory vault to priority delivery, and eventually a concierge that shops for you.",
+  },
 ];
 
 const STEPS = [
@@ -89,6 +98,7 @@ const TIPS = [
   "Be natural - “something nice for my sister's birthday, around Rs 5,000.”",
   "Try Sinhala or Tanglish - “mata Rs 10,000 ට යට හොඳ headphone එකක් ඕන.”",
   "Sign in to unlock search-by-photo and to keep your chats, basket and orders.",
+  "Paid for an order? Share the order number from your email - Aura tracks it and lifts your Aura Prestige tier.",
 ];
 
 /* ----------------------------------------------------------- demo bubbles */
@@ -281,6 +291,56 @@ export function GuideContent() {
                 <div className="flex gap-2.5 overflow-hidden">
                   <MiniProduct name="Pastel Ribbon Cake" price="Rs 5,770" match="92%" />
                   <MiniProduct name="Floral Drip Gateau" price="Rs 6,400" match="88%" />
+                </div>
+              </div>
+            </div>
+          </Reveal>
+        </section>
+
+        {/* Aura Prestige — curiosity hook */}
+        <section className="py-6">
+          <Reveal>
+            <div className="overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-gold/[0.1] via-card/40 to-rose/[0.06] p-6 sm:p-8">
+              <div className="flex flex-col gap-7 lg:flex-row lg:items-center lg:justify-between">
+                <div className="max-w-md">
+                  <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-gold/12 px-2.5 py-1 text-[0.7rem] font-semibold uppercase tracking-widest text-gold">
+                    <Crown className="size-3" /> Prestige
+                  </span>
+                  <h2 className="font-heading mt-3 text-2xl text-foreground sm:text-3xl">
+                    The more you shop, the more Aura does
+                  </h2>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    Every order you complete quietly lifts you up a private ladder. Silver unlocks a
+                    concierge that remembers your people and places. Gold puts your deliveries first.
+                    Diamond lets you hand Aura a budget and a date and walk away. And the elite{" "}
+                    <span className="font-semibold text-foreground">Aura</span> tier? That one we&rsquo;ll
+                    let you discover. Your status is waiting at the top of every chat.
+                  </p>
+                </div>
+
+                {/* Ladder teaser */}
+                <div className="grid w-full grid-cols-5 gap-2 lg:max-w-sm">
+                  {TIERS.map((t, i) => {
+                    const Icon = TIER_ICONS[t.id];
+                    const top = i === TIERS.length - 1;
+                    return (
+                      <div
+                        key={t.id}
+                        className={cn(
+                          "flex flex-col items-center gap-1.5 rounded-xl border border-border bg-background/60 px-1 py-3 text-center",
+                          top && "ring-1 ring-gold/40",
+                        )}
+                      >
+                        <span className={cn("grid size-8 place-items-center rounded-lg ring-1 ring-inset", t.color.chip, t.color.ring)}>
+                          <Icon className="size-4" />
+                        </span>
+                        <span className={cn("text-[0.7rem] font-semibold leading-none", t.color.text)}>{t.name}</span>
+                        <span className="text-[0.6rem] text-muted-foreground">
+                          {t.minOrders === 0 ? "Start" : `${t.minOrders}+`}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
