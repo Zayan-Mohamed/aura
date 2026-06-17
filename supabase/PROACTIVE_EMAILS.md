@@ -1,11 +1,11 @@
-# Proactive emails — setup runbook
+# Proactive emails - setup runbook
 
 Scheduled outreach for Aura, sent by the `proactive-emails` Supabase Edge
 Function via SendGrid (free tier, 100 emails/day). All templates are branded and
 emoji-free.
 
 **What's already deployed (by code):**
-- Migration `20260616120000_aura_proactive_emails.sql` — `occasions` + `email_log`
+- Migration `20260616120000_aura_proactive_emails.sql` - `occasions` + `email_log`
   tables, `reminded_at`/`followup_sent_at` columns, the `due_*` query functions,
   and `pg_cron` + `pg_net` enabled.
 - Edge Function `proactive-emails` (ACTIVE, `verify_jwt = false`, custom
@@ -20,19 +20,19 @@ Function URL: `https://bpailohmluateqfohetz.supabase.co/functions/v1/proactive-e
 
 ---
 
-## 1. SendGrid — verify a sender (no domain needed)
+## 1. SendGrid - verify a sender (no domain needed)
 
 You do **not** need a domain. Use Single Sender Verification:
 
 1. Create a free SendGrid account.
 2. **Settings → Sender Authentication → "Verify a Single Sender"** (NOT "Authenticate
-   your domain" — that's the one that asks for DNS records).
+   your domain" - that's the one that asks for DNS records).
 3. Fill the form with an email you control (e.g. your Gmail). SendGrid emails it a
-   confirmation link — click it. That address is now your verified "from".
+   confirmation link - click it. That address is now your verified "from".
 4. **Settings → API Keys → Create API Key** (Restricted, "Mail Send" only). Copy it.
 
 > Single Sender deliverability is slightly lower than domain auth (mail may land in
-> Promotions/Spam occasionally) — fine for the challenge. Upgrade to domain auth
+> Promotions/Spam occasionally) - fine for the challenge. Upgrade to domain auth
 > later if you get a domain.
 
 ---
@@ -41,7 +41,7 @@ You do **not** need a domain. Use Single Sender Verification:
 
 Dashboard → **Project Settings → Edge Functions → Secrets** (or CLI:
 `supabase secrets set KEY=value`). `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`
-are injected automatically — do **not** add them.
+are injected automatically - do **not** add them.
 
 | Secret | Value |
 |---|---|
@@ -67,7 +67,7 @@ curl -X POST 'https://bpailohmluateqfohetz.supabase.co/functions/v1/proactive-em
 - `{"skipped":"SendGrid not configured"}` → secrets from step 2 aren't set yet.
 - `401 unauthorized` → the `x-cron-secret` header doesn't match the `CRON_SECRET` secret.
 
-(Re-running won't re-email the same cart — `reminded_at` dedupes it.)
+(Re-running won't re-email the same cart - `reminded_at` dedupes it.)
 
 ---
 
@@ -123,7 +123,7 @@ cap (the function stops once the day's count hits 100, Asia/Colombo).
 Right now Supabase's built-in email doesn't reliably deliver signup confirmations
 (why there are 0 email/password users). Two options:
 
-**A. Proper fix — point Supabase Auth at SendGrid SMTP**
+**A. Proper fix - point Supabase Auth at SendGrid SMTP**
 Dashboard → **Authentication → Emails → SMTP Settings** → enable custom SMTP:
 - Host: `smtp.sendgrid.net`
 - Port: `587`
@@ -133,15 +133,15 @@ Dashboard → **Authentication → Emails → SMTP Settings** → enable custom 
 
 Confirmation/reset emails will then deliver (and look branded).
 
-**B. Quick demo fix — skip confirmation**
+**B. Quick demo fix - skip confirmation**
 Dashboard → **Authentication → Providers → Email** → turn **off** "Confirm email".
 Email/password signup then works instantly with no email. (Google sign-in already
-works regardless — it's auto-confirmed.)
+works regardless - it's auto-confirmed.)
 
 ---
 
 ## Notes
 - Security advisor flags `pg_net` installed in the `public` schema (WARN, cosmetic)
-  and `email_log` RLS-enabled-no-policy (INFO, intentional — service-role only).
+  and `email_log` RLS-enabled-no-policy (INFO, intentional - service-role only).
 - To change cadence, edit the cron expression in step 4 (e.g. `0 */6 * * *` = every
   6 hours) to conserve the daily budget.

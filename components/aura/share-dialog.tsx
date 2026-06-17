@@ -67,7 +67,7 @@ export function ShareDialog({
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1600);
     } catch {
-      /* clipboard blocked — ignore */
+      /* clipboard blocked - ignore */
     }
   };
 
@@ -137,14 +137,14 @@ export function ShareDialog({
                 </div>
                 <p className="mt-3 text-[0.72rem] leading-relaxed text-muted-foreground">
                   Anyone with this link can view this conversation and check out the products in it.
-                  It&rsquo;s a snapshot — new messages you send won&rsquo;t appear.
+                  It&rsquo;s a snapshot - new messages you send won&rsquo;t appear.
                 </p>
               </div>
             ) : (
               <div className="mt-4">
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   Create a link to this conversation. Whoever opens it can browse your picks, add them
-                  to a basket, and check out securely — without an account.
+                  to a basket, and check out securely - without an account.
                 </p>
                 {status === "error" && (
                   <div className="mt-3 flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-sm text-destructive">

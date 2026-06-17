@@ -297,7 +297,7 @@ export function GuideContent() {
           </Reveal>
         </section>
 
-        {/* Aura Prestige — curiosity hook */}
+        {/* Aura Prestige - curiosity hook */}
         <section className="py-6">
           <Reveal>
             <div className="overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-gold/[0.1] via-card/40 to-rose/[0.06] p-6 sm:p-8">

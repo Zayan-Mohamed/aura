@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-/** Aura's brand mark — a warm radiant bloom. Pure SVG, theme-aware. */
+/** Aura's brand mark - a warm radiant bloom. Pure SVG, theme-aware. */
 export function AuraMark({ className }: { className?: string }) {
   return (
     <svg

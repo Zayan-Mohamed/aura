@@ -31,7 +31,7 @@ function Meta({ icon: Icon, children }: { icon: React.ElementType; children: Rea
  * Autonomous Concierge result: Aura's single best in-budget, deliverable pick for
  * the occasion. The shopper confirms in one tap, which hands the conversation back
  * to the model to gather any remaining delivery details and run the normal
- * createOrder checkout — so this card never touches money or fakes a fee.
+ * createOrder checkout - so this card never touches money or fakes a fee.
  *
  * Presentational + props-driven (no local state) to satisfy the repo's React
  * Compiler lint rules.
@@ -50,12 +50,12 @@ export function PlanGiftCard({
 
   const confirm = () =>
     onAsk?.(
-      `Perfect — let's go with "${product.name}" (${product.id}) for ${occasion}, delivering to ${forWhom} in ${city} on ${date}. Take me to checkout: ask me for anything you still need (recipient phone, exact address, sender name), then create the order.`,
+      `Perfect - let's go with "${product.name}" (${product.id}) for ${occasion}, delivering to ${forWhom} in ${city} on ${date}. Take me to checkout: ask me for anything you still need (recipient phone, exact address, sender name), then create the order.`,
     );
 
   const swap = (alt: Product) =>
     onAsk?.(
-      `Actually, let's go with "${alt.name}" (${alt.id}) instead for ${occasion} — same delivery to ${forWhom} in ${city} on ${date}. Take me to checkout.`,
+      `Actually, let's go with "${alt.name}" (${alt.id}) instead for ${occasion} - same delivery to ${forWhom} in ${city} on ${date}. Take me to checkout.`,
     );
 
   return (

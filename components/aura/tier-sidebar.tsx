@@ -9,7 +9,7 @@ import { TIER_ICONS } from "./tier-badge";
 import { cn } from "@/lib/utils";
 
 /**
- * The Aura Prestige ladder — a slide-in panel (from the right, to sit opposite
+ * The Aura Prestige ladder - a slide-in panel (from the right, to sit opposite
  * the left chat sidebar) showing every tier, its perks, and where the shopper
  * stands. Signed-in shoppers get a live "You're here" marker + progress to the
  * next rung; guests see the whole ladder locked, with a nudge to sign in.
@@ -87,7 +87,7 @@ export function TierSidebar({
             </div>
 
             <div className="aura-scroll flex-1 overflow-y-auto px-4 py-4">
-              {/* Live status / progress — signed-in shoppers only */}
+              {/* Live status / progress - signed-in shoppers only */}
               {signedIn && current && (
                 <div className={cn("mb-4 rounded-2xl p-4 ring-1 ring-inset", current.color.soft, current.color.ring)}>
                   <div className="flex items-center gap-2">
@@ -121,7 +121,7 @@ export function TierSidebar({
                     </div>
                   ) : (
                     <p className="mt-3 text-[0.7rem] text-muted-foreground">
-                      You&apos;ve reached the top — thank you for shopping with Aura. ✦
+                      You&apos;ve reached the top - thank you for shopping with Aura. ✦
                     </p>
                   )}
                 </div>

@@ -90,7 +90,7 @@ function UsualCard({ item }: { item: UsualItem }) {
 
 /**
  * A home-screen "buy it again" strip, pre-loaded from the shopper's order
- * history — so repeat purchases are one tap, no need to ask Aura to find them.
+ * history - so repeat purchases are one tap, no need to ask Aura to find them.
  */
 export function UsualsCarousel({ items }: { items: UsualItem[] }) {
   if (items.length === 0) return null;
@@ -105,7 +105,7 @@ export function UsualsCarousel({ items }: { items: UsualItem[] }) {
       <div className="mb-3 flex items-center gap-2 px-1">
         <History className="size-4 text-gold" />
         <h2 className="font-heading text-lg text-foreground">Your usuals</h2>
-        <span className="text-xs text-muted-foreground">— buy it again in one tap</span>
+        <span className="text-xs text-muted-foreground">- buy it again in one tap</span>
       </div>
       <div className="aura-scroll -mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-2">
         {items.map((i) => (

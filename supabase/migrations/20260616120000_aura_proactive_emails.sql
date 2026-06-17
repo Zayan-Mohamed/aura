@@ -1,6 +1,6 @@
 -- Proactive emails: scheduled nudges sent by a Supabase Edge Function (SendGrid).
 -- This migration adds the schema + security-definer query functions the function
--- calls; the cron schedule itself is created separately (after secrets are set —
+-- calls; the cron schedule itself is created separately (after secrets are set -
 -- see supabase/PROACTIVE_EMAILS.md) so deploying never fires a half-configured job.
 
 -- --------------------------------------------------------------- extensions
@@ -43,7 +43,7 @@ alter table public.orders  add column if not exists followup_sent_at timestamptz
 
 -- ---------------------------------------------------------- grants + RLS
 -- Occasions are owner-only (same pattern as the rest of the app). email_log is
--- service-role only (no authenticated grants) — the Edge Function writes it.
+-- service-role only (no authenticated grants) - the Edge Function writes it.
 grant select, insert, update, delete on public.occasions to authenticated;
 
 alter table public.occasions enable row level security;
@@ -125,7 +125,7 @@ as $$
   limit 100;
 $$;
 
--- How many proactive emails we've sent today (Asia/Colombo) — for the daily cap.
+-- How many proactive emails we've sent today (Asia/Colombo) - for the daily cap.
 create or replace function public.emails_sent_today()
 returns int
 language sql

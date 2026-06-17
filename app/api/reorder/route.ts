@@ -1,7 +1,7 @@
 /**
  * One-tap reorder. Rebuilds a previous order's cart + saved recipient/address,
  * picks the soonest valid delivery date, and creates a fresh Kapruka checkout
- * link directly — no AI round-trip, no questions. Signed-in only (RLS scopes the
+ * link directly - no AI round-trip, no questions. Signed-in only (RLS scopes the
  * lookup to the caller's own orders).
  */
 import { createClient } from "@/lib/supabase/server";
@@ -11,7 +11,7 @@ import * as kapruka from "@/lib/kapruka";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
-/** Tomorrow's date (YYYY-MM-DD, Asia/Colombo) — a safe soonest delivery target. */
+/** Tomorrow's date (YYYY-MM-DD, Asia/Colombo) - a safe soonest delivery target. */
 function soonestDate(): string {
   const today = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Colombo",

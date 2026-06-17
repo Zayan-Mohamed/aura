@@ -32,7 +32,7 @@ import { visualSearchEnabled } from "@/lib/flags";
 import * as cloud from "@/lib/cloud";
 
 /**
- * Header overflow menu — keeps the bar uncluttered on mobile by tucking the
+ * Header overflow menu - keeps the bar uncluttered on mobile by tucking the
  * secondary actions (new chat, share, theme) behind one ⋮ button, so the brand
  * + tier badge and the core Basket/Profile controls stay visible.
  */
@@ -183,7 +183,7 @@ export function AuraChat() {
     try {
       seen = window.localStorage.getItem("aura-tour-v1") === "1";
     } catch {
-      /* storage blocked — treat as seen, don't nag */
+      /* storage blocked - treat as seen, don't nag */
     }
     if (seen) return;
     try {
@@ -272,7 +272,7 @@ export function AuraChat() {
   // --- on sign-in: pull profile + basket from the cloud (or push local up) ---
   React.useEffect(() => {
     if (!user) {
-      // Sync from the external auth system — clear cloud state on sign-out.
+      // Sync from the external auth system - clear cloud state on sign-out.
       /* eslint-disable react-hooks/set-state-in-effect */
       setConversations([]);
       setOrders([]);
@@ -348,7 +348,7 @@ export function AuraChat() {
       }
       await cloud.touchConversation(supabase, convId);
       if (!cancelled) await refreshConversations();
-      // A fresh checkout link updates the reorder list (but NOT the tier — only
+      // A fresh checkout link updates the reorder list (but NOT the tier - only
       // a verified PAID order does that).
       if (!cancelled && newOrders.length) await refreshOrders();
       // A verified trackOrder credits the tier; lift the new count off its result
@@ -398,7 +398,7 @@ export function AuraChat() {
   );
 
   // Edit a user turn (ChatGPT-style): drop it and everything after, purge those
-  // from the saved conversation, then re-ask the new text — Aura regenerates.
+  // from the saved conversation, then re-ask the new text - Aura regenerates.
   const editMessage = React.useCallback(
     (messageId: string, next: string) => {
       const all = messagesRef.current;
@@ -434,7 +434,7 @@ export function AuraChat() {
 
   const empty = messages.length === 0;
 
-  // "Your usuals" — products pulled from the signed-in shopper's past orders,
+  // "Your usuals" - products pulled from the signed-in shopper's past orders,
   // de-duplicated, so the home screen can offer one-tap re-add without asking.
   const usuals = React.useMemo(() => usualsFromOrders(orders), [orders]);
 
@@ -527,7 +527,7 @@ export function AuraChat() {
 
       {/* Conversation */}
       <main className="aura-scroll relative w-full flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable_both-edges]">
-        {/* Full-bleed hero glow — spans the whole viewport, not the centered column. */}
+        {/* Full-bleed hero glow - spans the whole viewport, not the centered column. */}
         {empty && (
           <div className="aura-radial aura-drift pointer-events-none absolute inset-x-0 top-0 -z-10 h-[55vh]" />
         )}

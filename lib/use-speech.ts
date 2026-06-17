@@ -1,18 +1,18 @@
 "use client";
 
 /**
- * Read-aloud via the browser's built-in SpeechSynthesis — zero cost, zero keys,
+ * Read-aloud via the browser's built-in SpeechSynthesis - zero cost, zero keys,
  * and (where the OS ships the voice) it speaks Sinhala/Tamil too. We pick a
  * voice matching the text's detected language so Aura's reply is read in the
  * right accent when possible, falling back to the platform default otherwise.
  *
  * SpeechSynthesis has three well-known footguns we handle here:
- *  1. getVoices() is empty on first call — voices load async; we listen for
+ *  1. getVoices() is empty on first call - voices load async; we listen for
  *     `voiceschanged` and cache them.
  *  2. Chrome garbage-collects the utterance mid-speech unless a reference is
- *     held — we keep one in a ref.
+ *     held - we keep one in a ref.
  *  3. Forcing `lang` to a tag with no installed voice (e.g. si-LK on desktop)
- *     can make Chrome speak NOTHING — so we only set a voice/lang we actually
+ *     can make Chrome speak NOTHING - so we only set a voice/lang we actually
  *     resolved, and otherwise let the platform default speak the text.
  */
 import * as React from "react";
@@ -49,12 +49,12 @@ function pickVoice(text: string): SpeechSynthesisVoice | null {
   for (const tag of langs) {
     const matches = voiceCache.filter((x) => x.lang?.toLowerCase().startsWith(tag.toLowerCase()));
     if (matches.length) {
-      // Prefer an OFFLINE/local voice — Chrome's "Google" network voices are
+      // Prefer an OFFLINE/local voice - Chrome's "Google" network voices are
       // unreliable on Linux (they're listed but often produce no audio).
       return matches.find((v) => v.localService) ?? matches[0];
     }
   }
-  // No language match — fall back to a local default voice so it still speaks
+  // No language match - fall back to a local default voice so it still speaks
   // (better than forcing a lang with no voice, or a dead network voice).
   return (
     voiceCache.find((v) => v.localService && v.default) ??
@@ -67,7 +67,7 @@ function pickVoice(text: string): SpeechSynthesisVoice | null {
 
 export function useSpeech() {
   const [speaking, setSpeaking] = React.useState(false);
-  // Only known on the client — gate behind mount to avoid hydration mismatch.
+  // Only known on the client - gate behind mount to avoid hydration mismatch.
   const [mounted, setMounted] = React.useState(false);
   // Hold the active utterance so Chrome doesn't GC it mid-sentence.
   const utterRef = React.useRef<SpeechSynthesisUtterance | null>(null);

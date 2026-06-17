@@ -1,5 +1,5 @@
 /**
- * Share helpers. Sri Lanka is WhatsApp-first — gifts get paid for by forwarding
+ * Share helpers. Sri Lanka is WhatsApp-first - gifts get paid for by forwarding
  * a link to whoever holds the card. A wa.me deep link opens WhatsApp (app or
  * web) with the message pre-filled; the user picks the recipient. We also expose
  * the native Web Share sheet where available (mobile), falling back to WhatsApp.
@@ -20,7 +20,7 @@ export async function shareText(text: string, title = "Aura"): Promise<void> {
       await navigator.share({ title, text });
       return;
     } catch {
-      // User dismissed, or share failed — fall through to WhatsApp.
+      // User dismissed, or share failed - fall through to WhatsApp.
     }
   }
   if (typeof window !== "undefined") {

@@ -18,7 +18,7 @@ export const tours: Tour[] = [
         icon: "💬",
         title: "Just talk to Aura",
         content:
-          "Tell Aura what you need in plain English, Sinhala or Tanglish — “a birthday cake to Kandy under Rs 5,000”. Tap 🎤 to speak or 📷 to search by a photo.",
+          "Tell Aura what you need in plain English, Sinhala or Tanglish - “a birthday cake to Kandy under Rs 5,000”. Tap 🎤 to speak or 📷 to search by a photo.",
         selector: "#tour-composer",
         side: "top",
         showControls: true,
@@ -40,7 +40,7 @@ export const tours: Tour[] = [
         icon: "👑",
         title: "Aura Prestige",
         content:
-          "This is your status. The more you shop, the more Aura does for you — proactive reminders, delivery confidence, even autonomous gifting. Tap the badge to see the ladder.",
+          "This is your status. The more you shop, the more Aura does for you - proactive reminders, delivery confidence, even autonomous gifting. Tap the badge to see the ladder.",
         selector: "#tour-tier",
         side: "bottom",
         showControls: true,
@@ -61,7 +61,7 @@ export const tours: Tour[] = [
         icon: "👤",
         title: "Your details & guide",
         content:
-          "Save your name, address and preferences once — Aura won’t ask twice. The full guide lives here too whenever you need it.",
+          "Save your name, address and preferences once - Aura won’t ask twice. The full guide lives here too whenever you need it.",
         selector: "#tour-profile",
         side: "bottom",
         showControls: true,

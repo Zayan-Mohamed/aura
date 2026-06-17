@@ -3,7 +3,7 @@
  *
  * One model embeds BOTH the shopper's uploaded photo and Kapruka product images
  * into the same vector space, so cosine similarity is meaningful across them.
- * Product images are passed as URLs — Voyage fetches them, so we never download
+ * Product images are passed as URLs - Voyage fetches them, so we never download
  * catalog images ourselves (and avoid browser CORS). The user's photo is passed
  * as a base64 data URL.
  *

@@ -11,7 +11,7 @@ import {
   useCarousel,
 } from "@/components/ui/carousel";
 
-// The concierge "why these" line — the model's one-sentence reasoning for this
+// The concierge "why these" line - the model's one-sentence reasoning for this
 // selection, turning a carousel into a recommendation.
 function RationaleLine({ text }: { text: string }) {
   return (

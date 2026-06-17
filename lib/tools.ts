@@ -24,7 +24,7 @@ import {
 /**
  * Per-request context injected into the tools.
  * - `imageDataUrl`: the shopper's uploaded photo for the current turn (set by
- *   the chat route) — visualSearch reads it from here, not from model args.
+ *   the chat route) - visualSearch reads it from here, not from model args.
  * - `db` / `userId`: the signed-in shopper's Supabase session + id, so a
  *   confirmed track_order can credit their Aura Prestige tier. Absent for guests.
  */
@@ -32,13 +32,13 @@ export type AuraToolContext = {
   imageDataUrl?: string;
   db?: SupabaseClient;
   userId?: string;
-  /** Server-authoritative verified-order count — gates tier perks. Absent for guests. */
+  /** Server-authoritative verified-order count - gates tier perks. Absent for guests. */
   orderCount?: number;
-  /** The shopper's saved delivery city — auto-used as deliverTo for Gold+ Priority Logistics. */
+  /** The shopper's saved delivery city - auto-used as deliverTo for Gold+ Priority Logistics. */
   defaultCity?: string;
 };
 
-/** Kapruka statuses that are NOT a completed, paid purchase — never credited. */
+/** Kapruka statuses that are NOT a completed, paid purchase - never credited. */
 const UNPAID_STATUSES = new Set([
   "cancelled",
   "canceled",
@@ -67,14 +67,14 @@ export type LoyaltyResult = {
 /**
  * Credit a signed-in shopper's tier for a track_order that came back as a real,
  * paid order. Only reachable with a valid Kapruka order number (track_order
- * succeeded), recorded de-duplicated + globally unique — so it can't be farmed.
+ * succeeded), recorded de-duplicated + globally unique - so it can't be farmed.
  * Returns null for guests / cancelled orders (no credit, nothing to show).
  */
 async function creditLoyalty(
   ctx: AuraToolContext,
   tracking: kapruka.OrderTracking,
 ): Promise<LoyaltyResult | null> {
-  if (!ctx.db || !ctx.userId) return null; // guest — can't earn until signed in
+  if (!ctx.db || !ctx.userId) return null; // guest - can't earn until signed in
   const orderNumber = tracking.orderNumber?.trim();
   if (!orderNumber) return null;
   if (UNPAID_STATUSES.has((tracking.status ?? "").toLowerCase())) return null;
@@ -100,7 +100,7 @@ export function makeAuraTools(ctx: AuraToolContext = {}) {
   return {
   searchProducts: tool({
     description:
-      "Search Kapruka's live catalog for purchasable products by keyword — groceries, electronics, fashion, home, essentials, gifts, anything. Use this whenever the shopper wants to find, browse, or compare items. Returns product cards the UI renders as a swipeable gallery — so prefer this over describing products in text. When you know the destination city (and ideally the date), pass deliverTo/deliverBy to enable Proactive Delivery Confidence: the catalog is filtered to only what can actually arrive, each card stamped with a freshness/ETA badge.",
+      "Search Kapruka's live catalog for purchasable products by keyword - groceries, electronics, fashion, home, essentials, gifts, anything. Use this whenever the shopper wants to find, browse, or compare items. Returns product cards the UI renders as a swipeable gallery - so prefer this over describing products in text. When you know the destination city (and ideally the date), pass deliverTo/deliverBy to enable Proactive Delivery Confidence: the catalog is filtered to only what can actually arrive, each card stamped with a freshness/ETA badge.",
     inputSchema: z.object({
       q: z.string().min(3).describe("Search query, e.g. 'red roses', 'basmati rice', 'wireless headphones'. Min 3 chars."),
       category: z.string().optional().describe("Optional category name to narrow results (e.g. 'Chocolates', 'flowers')."),
@@ -123,12 +123,12 @@ export function makeAuraTools(ctx: AuraToolContext = {}) {
         .string()
         .max(160)
         .nullish()
-        .describe("Optional ONE concierge-style line explaining WHY you picked these for this shopper (e.g. 'soft, under budget, and reaches Kandy fresh'). Shown above the cards — keep it short, warm, specific. Omit for a plain browse."),
+        .describe("Optional ONE concierge-style line explaining WHY you picked these for this shopper (e.g. 'soft, under budget, and reaches Kandy fresh'). Shown above the cards - keep it short, warm, specific. Omit for a plain browse."),
     }),
     execute: async ({ rationale, ...args }) => {
       // Gold+ Priority Logistics (enforced, not just prompted): default delivery
       // confidence to their saved city so EVERY search is checked against real
-      // delivery — even if the model forgets to pass deliverTo. A destination the
+      // delivery - even if the model forgets to pass deliverTo. A destination the
       // shopper names explicitly always wins.
       if (!args.deliverTo && ctx.defaultCity && hasPerk(ctx.orderCount, TIER_GATES.priorityLogistics)) {
         args.deliverTo = ctx.defaultCity;
@@ -145,18 +145,18 @@ export function makeAuraTools(ctx: AuraToolContext = {}) {
 
   compareProducts: tool({
     description:
-      "Put 2–4 products side by side as a comparison table (price, savings, stock, delivery, category) so the shopper can decide. Use when they ask to 'compare these', are torn between options, or you want to help them choose well. Pass the exact Kapruka product IDs from a recent search/carousel. Add a short `verdict` recommending one and why.",
+      "Put 2-4 products side by side as a comparison table (price, savings, stock, delivery, category) so the shopper can decide. Use when they ask to 'compare these', are torn between options, or you want to help them choose well. Pass the exact Kapruka product IDs from a recent search/carousel. Add a short `verdict` recommending one and why.",
     inputSchema: z.object({
       productIds: z
         .array(z.string())
         .min(2)
         .max(4)
-        .describe("2–4 Kapruka product IDs to compare, from a recent search."),
+        .describe("2-4 Kapruka product IDs to compare, from a recent search."),
       verdict: z
         .string()
         .max(200)
         .nullish()
-        .describe("Optional one-line recommendation shown under the table (e.g. 'The M17 wins on value — 5G and double the storage for Rs 4,600 more')."),
+        .describe("Optional one-line recommendation shown under the table (e.g. 'The M17 wins on value - 5G and double the storage for Rs 4,600 more')."),
     }),
     execute: async ({ productIds, verdict }) => {
       const res = await kapruka.compareProducts(productIds);
@@ -204,7 +204,7 @@ export function makeAuraTools(ctx: AuraToolContext = {}) {
 
   createOrder: tool({
     description:
-      "Create a guest-checkout order and return a 60-minute click-to-pay link (no Kapruka account needed). ONLY call this once you have explicitly confirmed with the shopper: the exact item(s), recipient name + phone, full delivery address + city + date, and sender name. Never invent these details — ask for anything missing first.",
+      "Create a guest-checkout order and return a 60-minute click-to-pay link (no Kapruka account needed). ONLY call this once you have explicitly confirmed with the shopper: the exact item(s), recipient name + phone, full delivery address + city + date, and sender name. Never invent these details - ask for anything missing first.",
     inputSchema: z.object({
       cart: z
         .array(
@@ -238,14 +238,14 @@ export function makeAuraTools(ctx: AuraToolContext = {}) {
 
   trackOrder: tool({
     description:
-      "Look up the status and delivery timeline of a paid Kapruka order by its order number (from the confirmation email — NOT the pre-payment order_ref). A successful lookup also VERIFIES the purchase and counts it toward the shopper's Aura Prestige tier — so when a signed-in shopper mentions they've paid/received an order, invite them to share that order number and call this.",
+      "Look up the status and delivery timeline of a paid Kapruka order by its order number (from the confirmation email - NOT the pre-payment order_ref). A successful lookup also VERIFIES the purchase and counts it toward the shopper's Aura Prestige tier - so when a signed-in shopper mentions they've paid/received an order, invite them to share that order number and call this.",
     inputSchema: z.object({
       orderNumber: z.string().describe("Kapruka order number, e.g. 'VIMP34456CB2'."),
     }),
     execute: async ({ orderNumber }) => {
       const res = await kapruka.trackOrder(orderNumber);
       if ("error" in res) return res;
-      // Credit the tier as a side-effect — only a real, paid order reaches here.
+      // Credit the tier as a side-effect - only a real, paid order reaches here.
       const loyalty = await creditLoyalty(ctx, res);
       return { ...res, loyalty };
     },
@@ -253,7 +253,7 @@ export function makeAuraTools(ctx: AuraToolContext = {}) {
 
   askChoice: tool({
     description:
-      "Ask the shopper a SHORT question with tappable answer buttons instead of asking in plain prose. Use this whenever the answer is one of a few discrete choices — yes/no, a budget band, an occasion type, 'this or that', which colour, pick a delivery date, 'add a gift message?', etc. It's far nicer than a wall of text and keeps the conversation moving. Give 2–5 concise options; the shopper taps and their answer arrives as their next message. Do NOT use it for open-ended questions (a name, an address, free-form ideas) — let them type those. After calling it, STOP and wait for their tap; don't also write the question as text.",
+      "Ask the shopper a SHORT question with tappable answer buttons instead of asking in plain prose. Use this whenever the answer is one of a few discrete choices - yes/no, a budget band, an occasion type, 'this or that', which colour, pick a delivery date, 'add a gift message?', etc. It's far nicer than a wall of text and keeps the conversation moving. Give 2-5 concise options; the shopper taps and their answer arrives as their next message. Do NOT use it for open-ended questions (a name, an address, free-form ideas) - let them type those. After calling it, STOP and wait for their tap; don't also write the question as text.",
     inputSchema: z.object({
       question: z.string().max(160).describe("The one-line question shown above the buttons."),
       options: z
@@ -269,7 +269,7 @@ export function makeAuraTools(ctx: AuraToolContext = {}) {
         )
         .min(2)
         .max(5)
-        .describe("2–5 answer options."),
+        .describe("2-5 answer options."),
       multiSelect: z
         .boolean()
         .nullish()
@@ -286,13 +286,13 @@ export function makeAuraTools(ctx: AuraToolContext = {}) {
       type: "text",
       value: `Asked the shopper "${output.question}" with tappable options [${output.options
         .map((o) => o.label)
-        .join(", ")}]. Their choice will arrive as the next user message — wait for it; don't repeat the question in prose.`,
+        .join(", ")}]. Their choice will arrive as the next user message - wait for it; don't repeat the question in prose.`,
     }),
   }),
 
   planGift: tool({
     description:
-      "Autonomous gifting for Diamond-tier members. Given a budget, occasion, delivery date and destination city, search the live catalogue, pick the single best in-budget item that can actually arrive in time, and return ONE curated proposal the shopper confirms in a tap (which flows into the normal createOrder checkout). Use this when a Diamond member hands you a budget + date instead of browsing themselves — don't make them pick.",
+      "Autonomous gifting for Diamond-tier members. Given a budget, occasion, delivery date and destination city, search the live catalogue, pick the single best in-budget item that can actually arrive in time, and return ONE curated proposal the shopper confirms in a tap (which flows into the normal createOrder checkout). Use this when a Diamond member hands you a budget + date instead of browsing themselves - don't make them pick.",
     inputSchema: z.object({
       budgetLKR: z.number().int().min(500).describe("Total budget in LKR."),
       occasion: z.string().describe("The occasion, e.g. \"mother's birthday\", 'anniversary', 'sympathy'."),
@@ -340,10 +340,10 @@ export function makeAuraTools(ctx: AuraToolContext = {}) {
 
   visualSearch: tool({
     description:
-      "Find catalog products that VISUALLY match a photo the shopper just uploaded (an inspiration image — a cake they saw, a dress, a gadget). Call this whenever an image is attached this turn; do NOT ask them to describe it. Embeds the photo and ranks real Kapruka products by visual similarity, returning ranked cards the interface renders. Pass deliverTo/deliverBy if you already know where it's going.",
+      "Find catalog products that VISUALLY match a photo the shopper just uploaded (an inspiration image - a cake they saw, a dress, a gadget). Call this whenever an image is attached this turn; do NOT ask them to describe it. Embeds the photo and ranks real Kapruka products by visual similarity, returning ranked cards the interface renders. Pass deliverTo/deliverBy if you already know where it's going.",
     inputSchema: z.object({
       // gpt-oss-120b tends to send `null` for unfilled optionals, which strict
-      // tool-schema validation rejects — accept nullish and coerce below.
+      // tool-schema validation rejects - accept nullish and coerce below.
       hint: z
         .string()
         .nullish()
@@ -358,7 +358,7 @@ export function makeAuraTools(ctx: AuraToolContext = {}) {
     }),
     execute: async ({ hint, deliverTo, deliverBy, rationale }) => {
       if (!ctx.imageDataUrl) {
-        return { error: "No image was attached this turn — ask the shopper to upload one." };
+        return { error: "No image was attached this turn - ask the shopper to upload one." };
       }
       const res = await visualSearch({
         imageDataUrl: ctx.imageDataUrl,
@@ -392,7 +392,7 @@ function deriveGiftQuery(occasion: string, notes?: string | null): string {
   return "gift";
 }
 
-/** Best in-budget, deliverable, in-stock pick — prefer the strongest delivery verdict. */
+/** Best in-budget, deliverable, in-stock pick - prefer the strongest delivery verdict. */
 function chooseBestGift(products: kapruka.Product[], budgetLKR: number): kapruka.Product | null {
   const affordable = products.filter(
     (p) =>
@@ -420,13 +420,13 @@ function buildGiftRationale(
   const price = p.price?.amount;
   const within =
     typeof price === "number"
-      ? `Rs ${price.toLocaleString("en-LK")} — comfortably within your Rs ${budgetLKR.toLocaleString("en-LK")}`
+      ? `Rs ${price.toLocaleString("en-LK")} - comfortably within your Rs ${budgetLKR.toLocaleString("en-LK")}`
       : "within your budget";
   const arrive = p.delivery?.label ? ` (${p.delivery.label})` : "";
   return `${within}, and it reaches ${city} by ${date}${arrive}.`;
 }
 
-/** Image-less tool set — used only for client-side type inference. */
+/** Image-less tool set - used only for client-side type inference. */
 export const auraTools = makeAuraTools();
 
 export type AuraTools = ReturnType<typeof makeAuraTools>;
@@ -449,12 +449,12 @@ const ALWAYS_ON_TOOLS: ReadonlySet<keyof AuraTools> = new Set([
  * Narrow the full tool set down to what the shopper's tier may actually call.
  *
  * INVARIANT: `makeAuraTools` always DEFINES every tool (so the compile-time
- * `InferUITools` union — and thus `AuraUIMessage` — stays a constant superset).
+ * `InferUITools` union - and thus `AuraUIMessage` - stays a constant superset).
  * This filters which tools are PASSED to the model at runtime; a tool that's
  * absent simply never gets invoked, and the client only ever renders parts that
  * actually arrive, so a narrowed runtime set can never break the typed client.
  *
- * - `planGift` (Autonomous Concierge) is added only for Diamond+ — below that
+ * - `planGift` (Autonomous Concierge) is added only for Diamond+ - below that
  *   tier the model literally cannot call it.
  */
 export function gateTools(tools: AuraTools, ctx: { orderCount?: number }): AuraTools {
@@ -465,6 +465,6 @@ export function gateTools(tools: AuraTools, ctx: { orderCount?: number }): AuraT
   for (const key of Object.keys(tools) as (keyof AuraTools)[]) {
     if (allowed.has(key)) out[key] = tools[key];
   }
-  // Runtime-narrowed, compile-time type preserved — see the invariant above.
+  // Runtime-narrowed, compile-time type preserved - see the invariant above.
   return out as AuraTools;
 }

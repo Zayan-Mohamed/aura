@@ -75,7 +75,7 @@ export function ComparisonCard({
       ? priced.reduce((a, b) => ((a.price.amount ?? Infinity) <= (b.price.amount ?? Infinity) ? a : b)).id
       : null;
 
-  // Fixed track widths — a `1fr` column inside a `min-w-max` grid has no upper
+  // Fixed track widths - a `1fr` column inside a `min-w-max` grid has no upper
   // bound, so the square images balloon to fill the viewport. Fixed widths keep
   // each product a sane size and let the table scroll horizontally when needed.
   const cols = `6.5rem repeat(${products.length}, 10.5rem)`;
@@ -138,7 +138,7 @@ export function ComparisonCard({
                 const off = discountPct(p.price, p.compareAtPrice);
                 return (
                   <div key={p.id} className="border-l border-border/60 px-3 py-2.5 text-sm">
-                    {off != null ? <Badge variant="rose">−{off}%</Badge> : <span className="text-muted-foreground">—</span>}
+                    {off != null ? <Badge variant="rose">−{off}%</Badge> : <span className="text-muted-foreground">-</span>}
                   </div>
                 );
               })}
@@ -166,7 +166,7 @@ export function ComparisonCard({
                       <Truck className="size-3.5 text-jade" /> {p.delivery.label}
                     </span>
                   ) : (
-                    <span className="text-muted-foreground">—</span>
+                    <span className="text-muted-foreground">-</span>
                   )}
                 </div>
               ))}
@@ -175,7 +175,7 @@ export function ComparisonCard({
               label="Category"
               cells={products.map((p) => (
                 <div key={p.id} className="border-l border-border/60 px-3 py-2.5 text-sm text-muted-foreground">
-                  {p.categoryName ?? "—"}
+                  {p.categoryName ?? "-"}
                 </div>
               ))}
             />
@@ -186,7 +186,7 @@ export function ComparisonCard({
                   <button
                     type="button"
                     onClick={() =>
-                      onAsk?.(`Tell me more about "${p.name}" — what makes it stand out?`)
+                      onAsk?.(`Tell me more about "${p.name}" - what makes it stand out?`)
                     }
                     className="inline-flex items-center gap-1 text-xs font-medium text-gold hover:underline"
                   >

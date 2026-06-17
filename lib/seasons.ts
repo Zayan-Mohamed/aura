@@ -1,5 +1,5 @@
 /**
- * Seasonal mode — when the calendar lands on a Sri Lankan gifting occasion, the
+ * Seasonal mode - when the calendar lands on a Sri Lankan gifting occasion, the
  * landing hero greets the shopper with a themed ribbon and a few curated prompts
  * so the demo (and real customers) feel local and alive on the day. Returns null
  * outside any occasion window, so the app stays in its evergreen state most of
@@ -28,9 +28,9 @@ const WINDOWS: Window[] = [
     season: {
       id: "avurudu",
       label: "Avurudu season",
-      blurb: "Sinhala & Tamil New Year is here — sweetmeats, gifts for the family, and deliveries that arrive on time.",
+      blurb: "Sinhala & Tamil New Year is here - sweetmeats, gifts for the family, and deliveries that arrive on time.",
       suggestions: [
-        { label: "Avurudu sweets hamper", text: "Help me put together an Avurudu sweets hamper — kokis, kavum, aluwa and the like." },
+        { label: "Avurudu sweets hamper", text: "Help me put together an Avurudu sweets hamper - kokis, kavum, aluwa and the like." },
         { label: "New Year gift for my parents", text: "I want an Avurudu gift for my parents, budget around Rs 8,000." },
       ],
     },
@@ -41,7 +41,7 @@ const WINDOWS: Window[] = [
     season: {
       id: "vesak",
       label: "Vesak season",
-      blurb: "Vesak is near — lanterns, sweets, and thoughtful gifts to share the season of giving.",
+      blurb: "Vesak is near - lanterns, sweets, and thoughtful gifts to share the season of giving.",
       suggestions: [
         { label: "Vesak lanterns & decor", text: "Show me Vesak lanterns and decorations for my home." },
         { label: "A gift to share for Vesak", text: "I'd like a nice sweets or gift box to share with neighbours for Vesak." },
@@ -54,7 +54,7 @@ const WINDOWS: Window[] = [
     season: {
       id: "poson",
       label: "Poson season",
-      blurb: "Poson Poya is here — sweets, white offerings, and gifts for loved ones, delivered fresh.",
+      blurb: "Poson Poya is here - sweets, white offerings, and gifts for loved ones, delivered fresh.",
       suggestions: [
         { label: "Poson sweets & treats", text: "Show me sweets and treats I can gift for Poson." },
         { label: "A thoughtful Poson gift", text: "I want a thoughtful Poson gift for a family member, around Rs 5,000." },
@@ -67,7 +67,7 @@ const WINDOWS: Window[] = [
     season: {
       id: "christmas",
       label: "Christmas season",
-      blurb: "It's the season of giving — cakes, hampers, and gifts that reach loved ones in time for Christmas.",
+      blurb: "It's the season of giving - cakes, hampers, and gifts that reach loved ones in time for Christmas.",
       suggestions: [
         { label: "Christmas cake & hampers", text: "Help me find a Christmas cake and a hamper to gift." },
         { label: "Secret Santa under Rs 3,000", text: "I need a fun Secret Santa gift under Rs 3,000." },

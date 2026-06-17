@@ -101,7 +101,7 @@ export function ToolPart({
   }
 
   const out = part.output ?? {};
-  // Every fetcher degrades to { error } — surface it warmly.
+  // Every fetcher degrades to { error } - surface it warmly.
   if (out.error) return <Notice icon={AlertTriangle}>{out.error}</Notice>;
 
   switch (type) {

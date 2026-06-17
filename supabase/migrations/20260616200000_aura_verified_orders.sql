@@ -3,7 +3,7 @@
 -- the pre-payment order_ref our checkout link carries. So a tier credit is earned
 -- when the shopper brings that number back and Aura confirms it live via
 -- track_order. Each confirmed number is recorded here and the tier is the count
--- of these rows — so unpaid checkout links never inflate a tier.
+-- of these rows - so unpaid checkout links never inflate a tier.
 
 create table if not exists public.verified_orders (
   id             uuid primary key default gen_random_uuid(),

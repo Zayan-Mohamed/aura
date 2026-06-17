@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default async function SharePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const supabase = await createClient();
-  // Public, security-definer read by exact token — returns the snapshot only.
+  // Public, security-definer read by exact token - returns the snapshot only.
   const { data } = await supabase.rpc("get_shared_chat", { p_token: token });
   const row = (Array.isArray(data) ? data[0] : null) as
     | { title: string; messages: AuraUIMessage[] }

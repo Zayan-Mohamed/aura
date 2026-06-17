@@ -9,7 +9,7 @@ import type { NextConfig } from "next";
  *     (see components/aura/product-image.tsx), so img-src must allow https:.
  *   - Next.js App Router injects inline bootstrap/hydration scripts and inline
  *     styles (Tailwind v4 + framer-motion). Without a per-request nonce (which
- *     headers() can't provide — that needs middleware) script/style-src need
+ *     headers() can't provide - that needs middleware) script/style-src need
  *     'unsafe-inline'. 'unsafe-eval' keeps `pnpm dev`/HMR working.
  *   - Vercel Analytics loads va.vercel-scripts.com and beacons to
  *     vitals.vercel-insights.com.

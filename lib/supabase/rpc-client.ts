@@ -3,7 +3,7 @@
  * SECURITY DEFINER RPCs (upsert_product_embedding / match_product_embeddings).
  *
  * These RPCs are the only door into the `product_embeddings` cache, so the
- * publishable key is enough — no service-role secret required. Singleton +
+ * publishable key is enough - no service-role secret required. Singleton +
  * no session persistence (it never acts on behalf of a user).
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";

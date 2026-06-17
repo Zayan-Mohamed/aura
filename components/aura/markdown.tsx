@@ -3,7 +3,7 @@
 import * as React from "react";
 
 /**
- * Tiny, safe markdown renderer for assistant text — no dependencies, no raw
+ * Tiny, safe markdown renderer for assistant text - no dependencies, no raw
  * HTML. Supports paragraphs, bullet/numbered lists, **bold**, *italic*,
  * `code`, and [links](url). Anything that looks like an HTML tag or a markdown
  * table is stripped, so a chatty model can never dump <img> tags or a pasted

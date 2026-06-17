@@ -1,5 +1,5 @@
 -- Proactive Visual Search: cache product image embeddings (Voyage multimodal-3, 1024-d)
--- and rank candidates by cosine similarity. The table is server-cache only —
+-- and rank candidates by cosine similarity. The table is server-cache only -
 -- RLS is on with NO public policies; all access goes through the SECURITY DEFINER
 -- functions below, which the anon/publishable key may call (no service-role key).
 

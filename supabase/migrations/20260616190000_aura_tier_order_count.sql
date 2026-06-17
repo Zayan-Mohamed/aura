@@ -1,7 +1,7 @@
 -- Aura Prestige tiers are derived from how many orders a shopper has placed.
 -- This adds a small security-definer helper that returns the CALLER's own order
 -- count in one round-trip, so both the header tier badge and the chat route can
--- read it without a broad row select. Additive only — no tables or data change.
+-- read it without a broad row select. Additive only - no tables or data change.
 
 create or replace function public.order_count()
 returns integer

@@ -20,7 +20,7 @@ function AssistantBubble({ text }: { text: string }) {
 }
 
 /**
- * A user turn: the prose bubble plus quiet hover actions — copy the prompt, and
+ * A user turn: the prose bubble plus quiet hover actions - copy the prompt, and
  * (when editable) edit it in place. Editing truncates the turns after it and
  * regenerates, the same way ChatGPT/Claude do.
  */
@@ -39,7 +39,7 @@ function UserBubble({ text, onEdit }: { text: string; onEdit?: (next: string) =>
 
   React.useEffect(() => {
     if (!editing) return;
-    // Focus + size once the textarea mounts (DOM only — no state writes here).
+    // Focus + size once the textarea mounts (DOM only - no state writes here).
     const el = ref.current;
     if (!el) return;
     el.focus();
@@ -58,7 +58,7 @@ function UserBubble({ text, onEdit }: { text: string; onEdit?: (next: string) =>
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1500);
     } catch {
-      /* clipboard blocked — ignore */
+      /* clipboard blocked - ignore */
     }
   };
 
@@ -114,7 +114,7 @@ function UserBubble({ text, onEdit }: { text: string; onEdit?: (next: string) =>
       <div className="ml-auto w-fit max-w-[42rem] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-foreground px-4 py-2.5 text-[0.95rem] leading-relaxed text-background">
         {text}
       </div>
-      {/* Always visible — touch devices have no hover (this is a mobile-first app). */}
+      {/* Always visible - touch devices have no hover (this is a mobile-first app). */}
       <div className="flex items-center gap-0.5">
         <button
           type="button"
@@ -151,7 +151,7 @@ export function ChatMessage({
 }) {
   const isUser = message.role === "user";
 
-  // Concatenated prose for this turn — fuels copy + read-aloud actions.
+  // Concatenated prose for this turn - fuels copy + read-aloud actions.
   const text = message.parts
     .filter((p): p is { type: "text"; text: string } => p.type === "text")
     .map((p) => p.text)

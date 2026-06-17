@@ -15,7 +15,7 @@ import type { ShopperLanguage } from "./use-profile";
 export type DictationState = "idle" | "recording" | "transcribing";
 
 // Whisper language hints (ISO-639-1). Singlish ≈ romanized Sinhala, Tanglish ≈
-// romanized Tamil — bias Whisper toward the underlying language; the shopper can
+// romanized Tamil - bias Whisper toward the underlying language; the shopper can
 // always edit the transcript. "auto" sends no hint (let Whisper detect).
 const LANG_HINT: Record<ShopperLanguage, string | undefined> = {
   auto: undefined,
@@ -99,7 +99,7 @@ export function useDictation(language: ShopperLanguage = "auto") {
     streamRef.current = null;
 
     if (blob.size < 1200) {
-      // Too short to be speech — treat as a cancelled tap, no error.
+      // Too short to be speech - treat as a cancelled tap, no error.
       setState("idle");
       return;
     }

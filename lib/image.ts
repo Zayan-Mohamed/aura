@@ -3,7 +3,7 @@
 /**
  * Downscale + JPEG-encode a picked image File into a compact data URL.
  * Phone photos are multi-MB; CLIP embeddings only need ~512px, so we shrink
- * client-side before sending — keeping the request body small and fast.
+ * client-side before sending - keeping the request body small and fast.
  */
 export async function fileToDataUrl(
   file: File,

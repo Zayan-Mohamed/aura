@@ -1,12 +1,12 @@
 "use client";
 
 /**
- * Shopper profile — the few details Aura reuses across a conversation so the
+ * Shopper profile - the few details Aura reuses across a conversation so the
  * user doesn't have to repeat them: where it's going (powers Proactive Delivery
  * Confidence from the first message) and who to bill/contact (speeds checkout).
  *
  * Stored only on the user's device (localStorage). It is sent to the chat API
- * on each turn and injected into the system prompt — never persisted server-side.
+ * on each turn and injected into the system prompt - never persisted server-side.
  */
 import * as React from "react";
 
@@ -72,7 +72,7 @@ export function useProfile() {
       try {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       } catch {
-        /* storage full / unavailable — keep in-memory only */
+        /* storage full / unavailable - keep in-memory only */
       }
       return next;
     });

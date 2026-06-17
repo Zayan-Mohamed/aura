@@ -49,7 +49,7 @@ export function ProductCard({
 
   const details = () =>
     onAsk?.(
-      `Tell me more about "${product.name}" — what it is, what makes it special, and who it's a good fit for.`,
+      `Tell me more about "${product.name}" - what it is, what makes it special, and who it's a good fit for.`,
     );
 
   return (

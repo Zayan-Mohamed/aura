@@ -221,7 +221,7 @@ export function ProfileDrawer({
                 <Field
                   icon={NotebookPen}
                   label="Anything Aura should know?"
-                  hint="Preferences, allergies, urgency — e.g. “sugar-free”, “need it today”."
+                  hint="Preferences, allergies, urgency - e.g. “sugar-free”, “need it today”."
                 >
                   <textarea
                     className={cn(inputCls, "min-h-[4.5rem] resize-none")}
@@ -250,7 +250,7 @@ export function ProfileDrawer({
                 />
               </div>
 
-              {/* Footer — navigate to the guide */}
+              {/* Footer - navigate to the guide */}
               <div className="border-t border-border/70 px-5 py-4">
                 <Link
                   href="/guide"

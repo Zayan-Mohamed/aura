@@ -25,7 +25,7 @@ export async function POST(req: Request) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anon";
   const now = Date.now();
   if (now - (lastByIp.get(ip) ?? 0) < COOLDOWN_MS) {
-    return Response.json({ error: "One moment — please try again in a few seconds." }, { status: 429 });
+    return Response.json({ error: "One moment - please try again in a few seconds." }, { status: 429 });
   }
   lastByIp.set(ip, now);
 

@@ -2,15 +2,15 @@
 
 /**
  * Shared motion primitives for the marketing pages (guide + tech). Keeps the
- * site feeling alive — an ambient drifting aurora, scroll-reveals, staggered
- * cascades, and a pulsing pipeline dot — all respecting prefers-reduced-motion.
+ * site feeling alive - an ambient drifting aurora, scroll-reveals, staggered
+ * cascades, and a pulsing pipeline dot - all respecting prefers-reduced-motion.
  */
 import * as React from "react";
 import { motion, useReducedMotion, type Variants } from "motion/react";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-/** Slow-drifting blurred colour blobs behind the page — fixed, so they breathe as you scroll. */
+/** Slow-drifting blurred colour blobs behind the page - fixed, so they breathe as you scroll. */
 export function AuroraBackground() {
   const reduce = useReducedMotion();
   return (

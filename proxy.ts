@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Next 16 "proxy" (formerly middleware) — keeps the Supabase auth session cookie
+ * Next 16 "proxy" (formerly middleware) - keeps the Supabase auth session cookie
  * fresh on every navigation so server and client agree on who's signed in.
  */
 export async function proxy(request: NextRequest) {

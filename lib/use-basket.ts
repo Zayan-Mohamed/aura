@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Client-side shopping basket — a visible, accumulating cart so shoppers can
+ * Client-side shopping basket - a visible, accumulating cart so shoppers can
  * tell they're building a multi-item order. Lives in a small module-level store
  * (shared across every product card + the header) backed by localStorage, read
  * reactively via useSyncExternalStore. Handed to Aura at checkout to create the
@@ -32,7 +32,7 @@ function persist() {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   } catch {
-    /* storage unavailable — keep in memory */
+    /* storage unavailable - keep in memory */
   }
 }
 function hydrate() {

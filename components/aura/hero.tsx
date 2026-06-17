@@ -7,7 +7,7 @@ import { AuraMark } from "./aura-mark";
 import { currentSeason, type Season } from "@/lib/seasons";
 
 const SUGGESTIONS = [
-  { icon: ShoppingBasket, label: "Stock up my weekly groceries", text: "Help me stock up on weekly groceries — rice, dhal, tea, and a few essentials." },
+  { icon: ShoppingBasket, label: "Stock up my weekly groceries", text: "Help me stock up on weekly groceries - rice, dhal, tea, and a few essentials." },
   { icon: Smartphone, label: "A good phone under Rs 80,000", text: "I'm looking for a good smartphone under Rs 80,000." },
   { icon: Truck, label: "What reaches Kandy by Saturday?", text: "What can you deliver to Kandy by Saturday?" },
   { icon: Cake, label: "Birthday cake to Colombo tomorrow", text: "I'd like a birthday cake delivered to Colombo tomorrow." },

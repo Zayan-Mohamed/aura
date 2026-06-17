@@ -1,5 +1,5 @@
 /**
- * Contextual quick-reply chips — tappable follow-ups shown under Aura's latest
+ * Contextual quick-reply chips - tappable follow-ups shown under Aura's latest
  * reply so the shopper can keep moving without typing. Derived purely from the
  * shape of the last assistant turn (which tool cards it rendered), so they're
  * always relevant to what's on screen. The single most proven retail-bot
@@ -45,7 +45,7 @@ export function deriveQuickReplies(parts: Part[]): QuickReply[] {
   }
 
   if (tools.has("tool-checkDelivery")) {
-    chips.push({ label: "Find a gift to send", text: "Great — now help me find a gift to send there." });
+    chips.push({ label: "Find a gift to send", text: "Great - now help me find a gift to send there." });
   }
 
   if (tools.has("tool-listCategories")) {

@@ -44,7 +44,7 @@ export function CheckoutCard({ order }: { order: OrderConfirmation }) {
   const [copied, setCopied] = React.useState(false);
 
   // The whole point of sharing: hand someone the actual click-to-pay link so
-  // they can settle the bill (very common in SL — a relative pays for a gift).
+  // they can settle the bill (very common in SL - a relative pays for a gift).
   const shareMessage = `I've lined up an order on Kapruka via Aura.\nTotal: ${formatMoney({ amount: summary.grandTotal, currency: cur })}\nPay securely here (link expires soon): ${order.checkoutUrl}`;
 
   const copyLink = async () => {
@@ -53,7 +53,7 @@ export function CheckoutCard({ order }: { order: OrderConfirmation }) {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1600);
     } catch {
-      /* clipboard blocked — ignore */
+      /* clipboard blocked - ignore */
     }
   };
 
@@ -114,7 +114,7 @@ export function CheckoutCard({ order }: { order: OrderConfirmation }) {
           </button>
         </div>
         <p className="mt-1.5 text-center text-[0.7rem] text-muted-foreground/80">
-          Send the link to whoever&rsquo;s paying — they can settle it without an account.
+          Send the link to whoever&rsquo;s paying - they can settle it without an account.
         </p>
 
         <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">

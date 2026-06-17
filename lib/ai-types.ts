@@ -1,7 +1,7 @@
 /**
  * Shared, dependency-light types for the chat UI.
  *
- * Only `import type` from here in client components — `AuraTools` is type-only
+ * Only `import type` from here in client components - `AuraTools` is type-only
  * so it never pulls the server-side MCP client into the browser bundle.
  */
 import type { InferUITools, UIDataTypes, UIMessage } from "ai";

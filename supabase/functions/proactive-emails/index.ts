@@ -1,12 +1,12 @@
 /**
- * proactive-emails — Aura's scheduled outreach.
+ * proactive-emails - Aura's scheduled outreach.
  *
  * Invoked by pg_cron (hourly) over pg_net with an `x-cron-secret` header. Runs
  * three jobs and emails due shoppers via SendGrid, respecting the free-tier
  * 100/day cap and never emailing the same thing twice:
- *   1. abandoned_cart    — non-empty basket untouched 24h+
- *   2. occasion          — a saved date within the next 5 days
- *   3. delivery_followup — an order whose delivery date has passed
+ *   1. abandoned_cart    - non-empty basket untouched 24h+
+ *   2. occasion          - a saved date within the next 5 days
+ *   3. delivery_followup - an order whose delivery date has passed
  *
  * Auth is a shared secret, not a JWT (so verify_jwt is disabled at deploy). If
  * SendGrid isn't configured yet the function safely no-ops, so deploying before
@@ -139,7 +139,7 @@ async function runAbandonedCart(c: Counters) {
       })
       .join("");
     const body = `
-      <p style="margin:0 0 12px 0;">You left ${count} item${count === 1 ? "" : "s"} in your basket. They're still here whenever you're ready — I can confirm delivery to your area and walk you through a secure checkout in one go.</p>
+      <p style="margin:0 0 12px 0;">You left ${count} item${count === 1 ? "" : "s"} in your basket. They're still here whenever you're ready - I can confirm delivery to your area and walk you through a secure checkout in one go.</p>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid ${COLORS.line};border-bottom:1px solid ${COLORS.line};margin:8px 0;">${list}</table>`;
     const html = shell({
       preheader: `${count} item${count === 1 ? "" : "s"} waiting in your Aura basket`,
@@ -199,7 +199,7 @@ async function runDeliveryFollowups(c: Counters) {
     if (c.budget <= 0) break;
     const city = row.delivery?.city ? ` to ${esc(row.delivery.city)}` : "";
     const body = `
-      <p style="margin:0 0 12px 0;">Your order <strong>${esc(row.order_ref)}</strong> was scheduled to arrive${city}. I hope it landed beautifully. If anything wasn't right, just reply and I'll help sort it — or tap below to reorder or track it.</p>`;
+      <p style="margin:0 0 12px 0;">Your order <strong>${esc(row.order_ref)}</strong> was scheduled to arrive${city}. I hope it landed beautifully. If anything wasn't right, just reply and I'll help sort it - or tap below to reorder or track it.</p>`;
     const html = shell({
       preheader: `How was order ${row.order_ref}?`,
       heading: "How was your delivery?",

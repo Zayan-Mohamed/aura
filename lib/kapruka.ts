@@ -186,7 +186,7 @@ async function rawCall(name: string, params: Record<string, unknown>): Promise<u
     const outer = JSON.parse(text);
     payload = outer && typeof outer === "object" && "result" in outer ? (outer as { result: unknown }).result : outer;
   } catch {
-    /* not JSON — keep raw text */
+    /* not JSON - keep raw text */
   }
   // Inner value is often itself a JSON string.
   if (typeof payload === "string") {
@@ -248,7 +248,7 @@ function normalizeProduct(p: Record<string, any>): Product {
 }
 
 // ---------------------------------------------------------------------------
-// Public fetchers — each resolves to data or `{ error }`
+// Public fetchers - each resolves to data or `{ error }`
 // ---------------------------------------------------------------------------
 
 export type SearchArgs = {
@@ -259,13 +259,13 @@ export type SearchArgs = {
   maxPrice?: number;
   sort?: string;
   currency?: string;
-  /** Destination city — enables Proactive Delivery Confidence when set. */
+  /** Destination city - enables Proactive Delivery Confidence when set. */
   deliverTo?: string;
   /** Target delivery date YYYY-MM-DD (Asia/Colombo). Pairs with deliverTo. */
   deliverBy?: string;
 };
 
-// Perishables are the items whose value collapses if they arrive late —
+// Perishables are the items whose value collapses if they arrive late -
 // the heart of the Sri Lankan delivery-anxiety problem. Detected by name/category.
 const PERISHABLE_RE =
   /\b(cake|gateau|gâteau|cupcake|pastry|pastries|macaron|dessert|flower|floral|bouquet|rose|petal|wreath|fresh\s*cream|fruit\s*basket|fruits?\b)/i;
@@ -304,7 +304,7 @@ async function annotateDelivery(
   currency: string,
 ): Promise<{ products: Product[]; context: DeliveryContext } | null> {
   const base = await checkDelivery({ city, deliveryDate });
-  if ("error" in base) return null; // couldn't check — degrade to a plain list
+  if ("error" in base) return null; // couldn't check - degrade to a plain list
 
   const dateLabel = friendlyDate(deliveryDate ?? base.checkedDate);
   const arriveLabel = dateLabel ? `Delivers ${dateLabel}` : "Delivers";
@@ -367,7 +367,7 @@ async function annotateDelivery(
           };
         }
       }
-      // Beyond cap or check failed — fall back to the city verdict, flagged cautiously.
+      // Beyond cap or check failed - fall back to the city verdict, flagged cautiously.
       return {
         ...p,
         delivery: { status: "outstation", label: arriveLabel, note: "Freshness not individually verified." },
@@ -526,7 +526,7 @@ export async function getProduct(
  * Fetch several products at once for a side-by-side comparison. Reuses the
  * cached single-product fetcher (so repeats are free), drops any that fail, and
  * preserves the requested order. Returns the products the UI renders as a
- * comparison table — no extra normalization needed.
+ * comparison table - no extra normalization needed.
  */
 export async function compareProducts(
   productIds: string[],
@@ -630,7 +630,7 @@ export async function createOrder(
   args: CreateOrderArgs,
 ): Promise<Failable<OrderConfirmation>> {
   try {
-    // Orders are never cached — always a fresh call.
+    // Orders are never cached - always a fresh call.
     const data = (await rawCall("kapruka_create_order", {
       cart: args.cart.map((i) => ({
         product_id: i.productId,

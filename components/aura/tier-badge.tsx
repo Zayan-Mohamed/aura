@@ -5,7 +5,7 @@ import type { TierId } from "@/lib/tiers";
 import { tierForOrders } from "@/lib/tiers";
 import { cn } from "@/lib/utils";
 
-/** Lucide icon per tier — kept in the UI layer so lib/tiers.ts stays pure data. */
+/** Lucide icon per tier - kept in the UI layer so lib/tiers.ts stays pure data. */
 export const TIER_ICONS: Record<TierId, LucideIcon> = {
   bronze: Sparkle,
   silver: Medal,
@@ -47,7 +47,7 @@ export function TierBadge({
     <button
       type="button"
       onClick={onClick}
-      aria-label={`Aura ${tier.name} member — view prestige tiers`}
+      aria-label={`Aura ${tier.name} member - view prestige tiers`}
       title={`Aura ${tier.name} · ${tier.unlock}`}
       className={cn(
         "inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[0.7rem] font-semibold tracking-wide ring-1 ring-inset transition-transform hover:scale-105",

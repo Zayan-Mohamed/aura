@@ -110,7 +110,7 @@ export function ProductDetail({
           </button>
           <button
             type="button"
-            onClick={() => onAsk?.(`Can you deliver "${product.name}" — let me check my city?`)}
+            onClick={() => onAsk?.(`Can you deliver "${product.name}" - let me check my city?`)}
             className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-xs font-semibold tracking-wide text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <Truck className="size-3.5" /> Check delivery

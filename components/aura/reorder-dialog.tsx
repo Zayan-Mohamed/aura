@@ -33,7 +33,7 @@ function soonestLabel(): string {
 /**
  * One-tap reorder confirmation. Shows the saved items + delivery details and,
  * on confirm, hits /api/reorder which rebuilds the order and returns a fresh
- * Kapruka pay link directly — no AI, no questions.
+ * Kapruka pay link directly - no AI, no questions.
  */
 export function ReorderDialog({
   order,
@@ -98,7 +98,7 @@ export function ReorderDialog({
       onReordered?.();
     } catch {
       setStatus("error");
-      setError("Network hiccup — please try again.");
+      setError("Network hiccup - please try again.");
     }
   };
 
@@ -213,7 +213,7 @@ export function ReorderDialog({
                     )}
                   </button>
                   <p className="mt-2 text-center text-[0.7rem] text-muted-foreground/80">
-                    Same items, same address — we just need your secure payment.
+                    Same items, same address - we just need your secure payment.
                   </p>
                 </div>
               )}

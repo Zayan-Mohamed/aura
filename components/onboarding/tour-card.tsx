@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 /**
  * Aura-styled tour tooltip for Onborda. Receives the current step + navigation
  * callbacks; `arrow` is the pointer SVG Onborda positions toward the target.
- * Purely presentational — closing/advancing is handled by Onborda's callbacks.
+ * Purely presentational - closing/advancing is handled by Onborda's callbacks.
  */
 export function TourCard({
   step,

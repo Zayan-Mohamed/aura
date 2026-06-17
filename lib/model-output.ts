@@ -2,7 +2,7 @@
  * Compact, token-lean renderings of tool results for the *model* to read.
  *
  * The rich `Product` objects we return from tools (lib/tools.ts) carry long
- * image/CDN URLs, `images[]` galleries and full descriptions — everything the
+ * image/CDN URLs, `images[]` galleries and full descriptions - everything the
  * UI needs to render cards, but mostly dead weight to the model, which only
  * reasons over id / name / price / stock / delivery. Those payloads get
  * re-sent on every step of the agentic loop (stepCountIs(6)), so they were the
@@ -61,13 +61,13 @@ function contextLine(ctx?: DeliveryContext): string {
   const counts = `${ctx.deliverableCount} deliverable${
     ctx.hiddenCount ? `, ${ctx.hiddenCount} hidden (can't arrive in time)` : ""
   }`;
-  return `delivery: ${parts} — ${counts}`;
+  return `delivery: ${parts} - ${counts}`;
 }
 
-// Cards already show images, links and full copy — keep telling the model not
+// Cards already show images, links and full copy - keep telling the model not
 // to repeat them (reinforces the no-wall-of-text rule right at the data source).
 const CARDS_NOTE =
-  "(The shopper already sees these as rich cards — images, prices and links included. Don't repeat them in prose.)";
+  "(The shopper already sees these as rich cards - images, prices and links included. Don't repeat them in prose.)";
 
 function isErr(o: unknown): o is { error: string } {
   return !!o && typeof o === "object" && "error" in o;
@@ -87,7 +87,7 @@ export function searchResultToModel(output: unknown): string {
     return `No products found for "${o.query ?? ""}". Offer a simpler query or categories.`;
   }
   const head = o.relaxed
-    ? `query: "${o.query}" had no exact match — relaxed to "${o.effectiveQuery}"; these are the CLOSEST finds (say so).`
+    ? `query: "${o.query}" had no exact match - relaxed to "${o.effectiveQuery}"; these are the CLOSEST finds (say so).`
     : `query: "${o.query ?? ""}"`;
   return [head, contextLine(o.deliveryContext), productsTable(o.products), CARDS_NOTE]
     .filter(Boolean)
@@ -144,7 +144,7 @@ export function planGiftToModel(output: unknown): string {
   const p = o.proposal;
   return [
     `gift proposal for ${p.occasion} → ${p.city} by ${p.date}, budget Rs ${p.budgetLKR}:`,
-    `pick: ${p.product.id} "${p.product.name}" — Rs ${p.product.price?.amount ?? "?"}${
+    `pick: ${p.product.id} "${p.product.name}" - Rs ${p.product.price?.amount ?? "?"}${
       deliveryOf(p.product) ? ` (${deliveryOf(p.product)})` : ""
     }`,
     p.rationale ? `why: ${p.rationale}` : "",

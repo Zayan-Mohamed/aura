@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Budget guardian — an optional spend ceiling the shopper sets for their basket.
+ * Budget guardian - an optional spend ceiling the shopper sets for their basket.
  * When set, the basket shows a running "Rs X of Rs Y" progress bar and warns
  * gently when they go over, so the bill never surprises them at checkout.
  *

@@ -1,10 +1,10 @@
--- Aura Prestige — Silver perk (Proactive Concierge) enforcement.
+-- Aura Prestige - Silver perk (Proactive Concierge) enforcement.
 --
 -- The proactive occasion-reminder email is the *earned* Silver benefit: only
 -- shoppers who've reached Silver (>= 1 verified PAID order) get Aura reaching out
 -- before their saved dates. Memory itself stays free for everyone, and the
 -- transactional nudges (abandoned-cart recovery, delivery follow-up) remain
--- ungated — only this enrichment email is tier-gated.
+-- ungated - only this enrichment email is tier-gated.
 --
 -- We enforce it at the source: due_occasions() (called by the proactive-emails
 -- Edge Function as service_role) now skips users below the Silver threshold, so a

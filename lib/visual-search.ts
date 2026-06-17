@@ -8,7 +8,7 @@
  *     → pgvector ranks candidates by cosine similarity
  *     → threshold verdict ("exact match" vs "closest visual matches")
  *
- * The chat model never sees the image — it just calls the visualSearch tool and
+ * The chat model never sees the image - it just calls the visualSearch tool and
  * narrates the ranked cards the interface renders. Server-only (imported solely
  * by lib/tools.ts).
  */
@@ -21,19 +21,19 @@ import { embed, toVectorLiteral } from "./embeddings";
 import { rpcClient } from "./supabase/rpc-client";
 
 const groq = createGroq({ apiKey: process.env.GROQ_API_KEY });
-// Llama-4 Scout is multimodal on Groq — same provider captions the image.
+// Llama-4 Scout is multimodal on Groq - same provider captions the image.
 const VISION_MODEL =
   process.env.GROQ_VISION_MODEL ?? "meta-llama/llama-4-scout-17b-16e-instruct";
 
 // Cosine bands, calibrated for Voyage multimodal-3 (2026-06-12). Its image↔image
 // cosines run much LOWER than CLIP: same-category (cake photo vs catalog cakes)
-// clustered ~0.35–0.44, so "similar" sits at 0.30 and "exact" well above the
+// clustered ~0.35-0.44, so "similar" sits at 0.30 and "exact" well above the
 // same-category ceiling (only a genuine near-identical hit qualifies).
 const EXACT_THRESHOLD = 0.65;
 const SIMILAR_THRESHOLD = 0.3;
 
 // Free-tier Voyage (no payment method) is throttled to 3 RPM / 10K tokens-per-min,
-// and image embeddings are pixel-costly — a big candidate batch blows the TPM cap.
+// and image embeddings are pixel-costly - a big candidate batch blows the TPM cap.
 // Keep the pool small enough that one search (query + candidates) fits the limit.
 const CANDIDATE_LIMIT = 5;
 
@@ -54,7 +54,7 @@ const captionSchema = z.object({
   query: z
     .string()
     .describe(
-      "A BROAD 1-2 word catalog search term — the head noun only, e.g. 'cake', 'saree', 'headphones', 'watch'. No adjectives.",
+      "A BROAD 1-2 word catalog search term - the head noun only, e.g. 'cake', 'saree', 'headphones', 'watch'. No adjectives.",
     ),
   terms: z
     .array(z.string())
@@ -89,7 +89,7 @@ async function captionImage(
     const query = (object.query || "").trim() || (hint?.trim() ?? "gift");
     return { query, terms: object.terms ?? [] };
   } catch {
-    // Caption failed — fall back to the hint or a safe generic noun.
+    // Caption failed - fall back to the hint or a safe generic noun.
     return { query: (hint?.trim() || "gift"), terms: [] };
   }
 }
@@ -164,7 +164,7 @@ export async function visualSearch(args: {
 
     // 4) Embed the shopper's photo, then rank candidates by cosine in pgvector.
     const queryVec = (await embed([{ image: args.imageDataUrl }]))[0];
-    if (!queryVec) return { error: "Couldn't read that image — mind trying another?" };
+    if (!queryVec) return { error: "Couldn't read that image - mind trying another?" };
 
     const { data: ranked } = await supa.rpc("match_product_embeddings", {
       p_query: toVectorLiteral(queryVec),

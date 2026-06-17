@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 /**
  * Hover/visible action row under an assistant reply: copy the text, read it
  * aloud (browser speech synthesis, language-aware), and optionally regenerate.
- * Quiet by default — these are conveniences, not the main event.
+ * Quiet by default - these are conveniences, not the main event.
  */
 export function MessageActions({
   text,
@@ -29,7 +29,7 @@ export function MessageActions({
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1500);
     } catch {
-      /* clipboard blocked — ignore */
+      /* clipboard blocked - ignore */
     }
   };
 

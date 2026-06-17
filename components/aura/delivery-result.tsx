@@ -48,7 +48,7 @@ export function DeliveryCard({ result }: { result: DeliveryResult }) {
             {ok ? "Delivery date" : "Next available"}
           </p>
           <p className="mt-0.5 text-base font-medium text-card-foreground">
-            {ok ? result.checkedDate : result.nextAvailableDate ?? "—"}
+            {ok ? result.checkedDate : result.nextAvailableDate ?? "-"}
           </p>
         </div>
       </div>

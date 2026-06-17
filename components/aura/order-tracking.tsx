@@ -46,8 +46,8 @@ export function OrderTrackingCard({
           <Sparkles className="size-3.5 shrink-0" />
           <span>
             {loyalty.leveledUp
-              ? `Verified — welcome to Aura ${loyalty.tierName}! ✦`
-              : `Verified — added to your Aura status (${loyalty.count} order${loyalty.count === 1 ? "" : "s"}).`}
+              ? `Verified - welcome to Aura ${loyalty.tierName}! ✦`
+              : `Verified - added to your Aura status (${loyalty.count} order${loyalty.count === 1 ? "" : "s"}).`}
           </span>
         </div>
       )}

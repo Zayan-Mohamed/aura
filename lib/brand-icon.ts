@@ -1,5 +1,5 @@
 /**
- * Aura brand mark as a self-contained SVG string — a warm radiant bloom on a
+ * Aura brand mark as a self-contained SVG string - a warm radiant bloom on a
  * gold→terracotta tile. Shared by the static favicon, the apple-touch icon, and
  * the social (OG/Twitter) image so the brand stays consistent everywhere.
  *
@@ -7,8 +7,8 @@
  * so they can't read `--gold` etc.
  */
 export const BRAND = {
-  goldA: "#E2A24E", // tile gradient — warm gold
-  goldB: "#BE5B3A", // tile gradient — terracotta
+  goldA: "#E2A24E", // tile gradient - warm gold
+  goldB: "#BE5B3A", // tile gradient - terracotta
   cream: "#FCF6EC", // the bloom
   ink: "#2C2620", // warm near-black text
   bg: "#FBF8F2", // warm paper background

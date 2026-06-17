@@ -1,5 +1,5 @@
 -- Shareable chats. The owner mints an unguessable token that snapshots the
--- conversation at share time (frozen — later messages never leak). Anyone with
+-- conversation at share time (frozen - later messages never leak). Anyone with
 -- the link can view that snapshot and check out the products in it via a public
 -- form; they cannot see the owner, their other chats, or future messages.
 
@@ -19,7 +19,7 @@ alter table public.shared_chats enable row level security;
 create policy "shared_chats_owner" on public.shared_chats for all to authenticated
   using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 
--- Public read by EXACT token only — returns just the snapshot, never user_id.
+-- Public read by EXACT token only - returns just the snapshot, never user_id.
 -- Security definer so an anonymous viewer can read it past the owner-only RLS.
 create or replace function public.get_shared_chat(p_token text)
 returns table (title text, messages jsonb, created_at timestamptz)

@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 
 /**
  * Server Supabase client (Server Components, Route Handlers). `cookies()` is
- * async in Next 16. Writes from a Server Component throw (read-only) — that's
+ * async in Next 16. Writes from a Server Component throw (read-only) - that's
  * fine, the proxy refreshes the session cookie, so we swallow it.
  */
 export async function createClient() {
@@ -23,7 +23,7 @@ export async function createClient() {
               cookieStore.set(name, value, options);
             }
           } catch {
-            // Called from a Server Component — ignore; proxy handles refresh.
+            // Called from a Server Component - ignore; proxy handles refresh.
           }
         },
       },

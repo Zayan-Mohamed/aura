@@ -56,10 +56,10 @@
 - None detected.
 
 ## Hyperedges (group relationships)
-- **Aura Runtime Chat Flow (client to MCP to streamed UI)** — claude_chat_flow, claude_generative_ui, claude_kapruka_mcp_integration, claude_groq_model_choice [EXTRACTED 1.00]
-- **MCP Rate-Limit Mitigation via Caching** — claude_rate_limit_constraints, claude_mcp_singleton_cache, kapruka_challenge_idea_generation_semantic_caching, kapruka_challenge_idea_generation_mcp_constraints [INFERRED 0.85]
-- **Blueprint Concepts Realized in Project Aura** — kapruka_challenge_idea_generation_project_aura_blueprint, kapruka_challenge_idea_generation_generative_ui, kapruka_challenge_idea_generation_deterministic_logistics, claude_project_aura [INFERRED 0.75]
-- **Next.js Starter-Template Static Assets** — public_file_icon, public_globe_icon, public_next_logo, public_vercel_logo, public_window_icon [INFERRED 0.95]
+- **Aura Runtime Chat Flow (client to MCP to streamed UI)** - claude_chat_flow, claude_generative_ui, claude_kapruka_mcp_integration, claude_groq_model_choice [EXTRACTED 1.00]
+- **MCP Rate-Limit Mitigation via Caching** - claude_rate_limit_constraints, claude_mcp_singleton_cache, kapruka_challenge_idea_generation_semantic_caching, kapruka_challenge_idea_generation_mcp_constraints [INFERRED 0.85]
+- **Blueprint Concepts Realized in Project Aura** - kapruka_challenge_idea_generation_project_aura_blueprint, kapruka_challenge_idea_generation_generative_ui, kapruka_challenge_idea_generation_deterministic_logistics, claude_project_aura [INFERRED 0.75]
+- **Next.js Starter-Template Static Assets** - public_file_icon, public_globe_icon, public_next_logo, public_vercel_logo, public_window_icon [INFERRED 0.95]
 
 ## Communities (19 total, 8 thin omitted)
 
@@ -110,7 +110,7 @@ Nodes (9): devDependencies, eslint, eslint-config-next, tailwindcss, @tailwindcs
 ## Knowledge Gaps
 - **108 isolated node(s):** `playfairDisplayHeading`, `notoSans`, `geistSans`, `geistMono`, `metadata` (+103 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **8 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **8 thin communities (<3 nodes) omitted from report** - run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_

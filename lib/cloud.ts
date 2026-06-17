@@ -1,5 +1,5 @@
 /**
- * Cloud persistence helpers — thin wrappers over Supabase queries used by the
+ * Cloud persistence helpers - thin wrappers over Supabase queries used by the
  * signed-in experience (profile, basket, chat history, orders). Every call runs
  * as the signed-in user, so Row-Level Security guarantees per-user isolation.
  */
@@ -99,7 +99,7 @@ export async function loadMessages(db: DB, conversationId: string): Promise<Aura
   })) as AuraUIMessage[];
 }
 
-/** Delete specific messages by id — used when an edited turn truncates the chat. */
+/** Delete specific messages by id - used when an edited turn truncates the chat. */
 export async function deleteMessages(db: DB, ids: string[]) {
   if (ids.length === 0) return;
   await db.from("messages").delete().in("id", ids);
@@ -128,7 +128,7 @@ export async function saveMessages(
 /**
  * A persisted order line. We store the productId + quantity (from the createOrder
  * tool input) AND, when we can match it against the basket at checkout time, the
- * name/price/image — so one-tap reorder can rebuild the basket with real items
+ * name/price/image - so one-tap reorder can rebuild the basket with real items
  * instead of asking the shopper to remember what they bought.
  */
 export type SavedOrderItem = {
@@ -282,7 +282,7 @@ export async function deleteOccasion(db: DB, id: string) {
 }
 
 /**
- * Count of the signed-in user's VERIFIED (paid) orders — drives the Aura
+ * Count of the signed-in user's VERIFIED (paid) orders - drives the Aura
  * Prestige tier. Prefers the `order_count()` RPC (one round-trip, no row
  * payload); falls back to a head count of verified_orders if the RPC is
  * unavailable, so it degrades gracefully. Counts only orders confirmed paid via
@@ -301,8 +301,8 @@ export async function countOrders(db: DB, userId: string): Promise<number> {
 /**
  * Record a Kapruka order number the shopper has proven paid (a successful,
  * non-cancelled track_order). De-duplicated on the globally-unique order_number
- * (ON CONFLICT DO NOTHING), so re-tracking the same order — or claiming one
- * already verified by another account — adds nothing. Returns true only when a
+ * (ON CONFLICT DO NOTHING), so re-tracking the same order - or claiming one
+ * already verified by another account - adds nothing. Returns true only when a
  * brand-new row was inserted (i.e. the tier just gained a step).
  */
 export async function recordVerifiedOrder(
@@ -327,7 +327,7 @@ export async function recordVerifiedOrder(
   return Array.isArray(data) && data.length > 0;
 }
 
-/** Recent orders for the signed-in user (newest first) — powers reorder. */
+/** Recent orders for the signed-in user (newest first) - powers reorder. */
 export async function listOrders(db: DB, userId: string): Promise<OrderRow[]> {
   const { data } = await db
     .from("orders")

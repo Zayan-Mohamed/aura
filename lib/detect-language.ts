@@ -1,7 +1,7 @@
 /**
  * Lightweight, zero-latency language/dialect detector for the shopper's latest
  * message. The chat model (gpt-oss-120b) mirrors languages well in isolation,
- * but the instruction gets diluted in a long system prompt mid-conversation —
+ * but the instruction gets diluted in a long system prompt mid-conversation -
  * so we detect the dialect here and inject a loud, per-turn directive.
  *
  * Five buckets, matching the system prompt:
@@ -37,7 +37,7 @@ function countHits(text: string, words: string[]): number {
 
 export function detectLanguage(text: string): DetectedLanguage {
   if (!text || !text.trim()) return "english";
-  // Native scripts win immediately (Tamil U+0B80–0BFF, Sinhala U+0D80–0DFF).
+  // Native scripts win immediately (Tamil U+0B80-0BFF, Sinhala U+0D80-0DFF).
   if (/[஀-௿]/.test(text)) return "tamil";
   if (/[඀-෿]/.test(text)) return "sinhala";
 

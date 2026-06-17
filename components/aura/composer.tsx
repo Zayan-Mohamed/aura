@@ -27,7 +27,7 @@ export function Composer({
   imageEnabled?: boolean;
   /** Called when a locked icon is clicked (prompt the shopper to sign in). */
   onRequireAuth?: () => void;
-  /** Shopper's preferred language — biases the speech-to-text transcription. */
+  /** Shopper's preferred language - biases the speech-to-text transcription. */
   language?: ShopperLanguage;
 }) {
   const [value, setValue] = React.useState("");
@@ -37,7 +37,7 @@ export function Composer({
   const fileRef = React.useRef<HTMLInputElement>(null);
 
   // Voice dictation (Groq Whisper). Transcribed text is appended to the input
-  // for the shopper to review/edit before sending — never auto-sent.
+  // for the shopper to review/edit before sending - never auto-sent.
   const dictation = useDictation(language);
   const appendTranscript = React.useCallback((text: string) => {
     setValue((v) => (v.trim() ? `${v.trim()} ${text}` : text));
@@ -62,7 +62,7 @@ export function Composer({
     try {
       setImage(await fileToDataUrl(file));
     } catch {
-      /* unreadable image — silently ignore */
+      /* unreadable image - silently ignore */
     } finally {
       setLoadingImg(false);
     }
@@ -164,7 +164,7 @@ export function Composer({
           </div>
         )}
 
-        {/* Voice dictation — push to talk, then review the transcript */}
+        {/* Voice dictation - push to talk, then review the transcript */}
         {dictation.supported && (
           <button
             type="button"

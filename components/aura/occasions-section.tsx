@@ -66,7 +66,7 @@ export function OccasionsSection({
           onClick={onRequireAuth}
           className="rounded-xl border border-dashed border-border bg-card/50 px-3 py-3 text-left text-xs leading-relaxed text-muted-foreground transition-colors hover:border-gold/40 hover:text-foreground"
         >
-          Sign in to save birthdays and anniversaries — Aura will email you a few days
+          Sign in to save birthdays and anniversaries - Aura will email you a few days
           before, so a gift always arrives in time.
         </button>
       ) : (

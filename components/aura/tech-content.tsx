@@ -92,7 +92,7 @@ function Node({ icon: Icon, title, sub, tone }: NodeT & { tone: Tone }) {
   );
 }
 
-/** A labelled architecture band — a row of nodes that cascade in. */
+/** A labelled architecture band - a row of nodes that cascade in. */
 function Band({ label, tone, nodes, last }: { label: string; tone: Tone; nodes: NodeT[]; last?: boolean }) {
   return (
     <>
@@ -230,7 +230,7 @@ const ARCH: { label: string; tone: Tone; nodes: NodeT[] }[] = [
     ],
   },
   {
-    label: "Aura server — Next.js 16",
+    label: "Aura server - Next.js 16",
     tone: "jade",
     nodes: [
       { icon: Workflow, title: "/api/chat", sub: "streamText + tools" },
@@ -254,13 +254,13 @@ const LIFECYCLE: Stage[] = [
   {
     tag: "Browser",
     title: "You type (or attach a photo)",
-    body: "useChat posts the whole conversation to /api/chat through a DefaultChatTransport — no page reloads.",
+    body: "useChat posts the whole conversation to /api/chat through a DefaultChatTransport - no page reloads.",
   },
   {
     tag: "Groq · gpt-oss-120b",
     tone: "gold",
     title: "The model picks the right tools",
-    body: "streamText runs the chat brain. It reads your intent and decides which Kapruka tools to call — search, delivery check, create order — rather than guessing from memory.",
+    body: "streamText runs the chat brain. It reads your intent and decides which Kapruka tools to call - search, delivery check, create order - rather than guessing from memory.",
   },
   {
     tag: "Kapruka MCP",
@@ -272,7 +272,7 @@ const LIFECYCLE: Stage[] = [
     tag: "AI SDK 6",
     tone: "jade",
     title: "Typed JSON streams back",
-    body: "Results return as typed tool-parts — never prose, never React from the model. The model's job is data; the interface owns the visuals.",
+    body: "Results return as typed tool-parts - never prose, never React from the model. The model's job is data; the interface owns the visuals.",
   },
   {
     tag: "Browser",
@@ -297,19 +297,19 @@ const VISION: Stage[] = [
     tag: "Kapruka MCP",
     tone: "rose",
     title: "Gather candidates",
-    body: "A broad search — with automatic query relaxation — returns real, in-stock products to rank against the photo.",
+    body: "A broad search - with automatic query relaxation - returns real, in-stock products to rank against the photo.",
   },
   {
     tag: "Voyage · multimodal-3",
     tone: "jade",
     title: "Embed into one space",
-    body: "The photo and each product image become 1024-dimension vectors from the SAME model — so they share one space and cosine similarity is meaningful.",
+    body: "The photo and each product image become 1024-dimension vectors from the SAME model - so they share one space and cosine similarity is meaningful.",
   },
   {
     tag: "Supabase · pgvector",
     tone: "jade",
     title: "Rank by cosine",
-    body: "Vectors are cached, then ranked with pgvector's <=> operator. A calibrated threshold turns the top score into a verdict — exact match vs. closest visual matches.",
+    body: "Vectors are cached, then ranked with pgvector's <=> operator. A calibrated threshold turns the top score into a verdict - exact match vs. closest visual matches.",
   },
   {
     tag: "Browser",
@@ -322,19 +322,19 @@ const PRESTIGE: Stage[] = [
   {
     tag: "Browser",
     title: "Aura builds your checkout",
-    body: "When you confirm an order, Aura mints a real 60-minute Kapruka pay link. Creating a link earns nothing on its own — only a paid order ever counts.",
+    body: "When you confirm an order, Aura mints a real 60-minute Kapruka pay link. Creating a link earns nothing on its own - only a paid order ever counts.",
   },
   {
     tag: "Kapruka",
     tone: "rose",
-    title: "You pay — and get an order number",
+    title: "You pay - and get an order number",
     body: "Payment happens in the browser; Kapruka then emails you a unique order number (e.g. VIMP34456CB2). That number is the only proof of a completed purchase.",
   },
   {
     tag: "Chat · trackOrder",
     tone: "gold",
     title: "Bring the number back",
-    body: "Share the order number and Aura tracks it. A successful lookup confirms — live, against Kapruka — that the order is real and paid.",
+    body: "Share the order number and Aura tracks it. A successful lookup confirms - live, against Kapruka - that the order is real and paid.",
   },
   {
     tag: "Supabase · RLS",
@@ -346,7 +346,7 @@ const PRESTIGE: Stage[] = [
     tag: "Server-authoritative",
     tone: "jade",
     title: "Your tier follows you",
-    body: "The chat route reads your tier from the database on every turn — never from a client-supplied number — and greets you by status, unlocking each tier's perk.",
+    body: "The chat route reads your tier from the database on every turn - never from a client-supplied number - and greets you by status, unlocking each tier's perk.",
   },
 ];
 
@@ -354,9 +354,9 @@ const STACK: { icon: React.ElementType; name: string; role: string }[] = [
   { icon: Layers, name: "Next.js 16", role: "App Router, server components, streaming, and the proxy middleware." },
   { icon: Atom, name: "React 19", role: "The component model behind every card and drawer." },
   { icon: Workflow, name: "Vercel AI SDK 6", role: "Chat streaming, tool calling, and tool-based generative UI." },
-  { icon: Cpu, name: "Groq · gpt-oss-120b", role: "The chat brain — fast, reliable multi-tool calling in every language." },
+  { icon: Cpu, name: "Groq · gpt-oss-120b", role: "The chat brain - fast, reliable multi-tool calling in every language." },
   { icon: Eye, name: "Groq · Llama-4 Scout", role: "Vision model that captions uploaded photos for visual search." },
-  { icon: Boxes, name: "Kapruka MCP", role: "The single source of truth — live catalog, delivery, and orders." },
+  { icon: Boxes, name: "Kapruka MCP", role: "The single source of truth - live catalog, delivery, and orders." },
   { icon: ImageIcon, name: "Voyage multimodal-3", role: "Image + text embeddings that power visual similarity search." },
   { icon: Database, name: "Supabase", role: "Postgres, Auth (email + Google), row-level security, and pgvector." },
   { icon: Palette, name: "Tailwind v4 + Motion", role: "The warm, editorial palette and every animation." },
@@ -376,17 +376,17 @@ const SMARTS: { icon: React.ElementType; title: string; body: string }[] = [
   {
     icon: ShieldCheck,
     title: "Proactive Delivery Confidence",
-    body: "Before showing anything, Aura cross-checks each item against real delivery to your city and date — and quietly hides what can't arrive fresh.",
+    body: "Before showing anything, Aura cross-checks each item against real delivery to your city and date - and quietly hides what can't arrive fresh.",
   },
   {
     icon: Languages,
     title: "Language detection",
-    body: "A zero-latency detector reads each message (English, Sinhala, Tamil, Singlish, Tanglish) and pins the reply language — so the model never drifts dialect.",
+    body: "A zero-latency detector reads each message (English, Sinhala, Tamil, Singlish, Tanglish) and pins the reply language - so the model never drifts dialect.",
   },
   {
     icon: Search,
     title: "Query relaxation",
-    body: "If an over-specific search comes up short, Aura falls back to the head noun and re-ranks by your terms — so you always get the closest real results.",
+    body: "If an over-specific search comes up short, Aura falls back to the head noun and re-ranks by your terms - so you always get the closest real results.",
   },
 ];
 
@@ -440,13 +440,13 @@ export function TechContent() {
             </h1>
             <p className="mt-4 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground">
               Aura is a thin, fast interface wrapped around a few specialised models and one live
-              data source. Here&rsquo;s the architecture — what each piece is, and exactly what it
-              does — as a set of maps rather than a wall of text.
+              data source. Here&rsquo;s the architecture - what each piece is, and exactly what it
+              does - as a set of maps rather than a wall of text.
             </p>
           </Reveal>
         </section>
 
-        {/* Map 1 — Architecture */}
+        {/* Map 1 - Architecture */}
         <section className="py-6">
           <SectionHead
             overline="The big picture"
@@ -460,7 +460,7 @@ export function TechContent() {
           </div>
         </section>
 
-        {/* Map 2 — Request lifecycle */}
+        {/* Map 2 - Request lifecycle */}
         <section className="py-12">
           <SectionHead
             overline="One message, start to finish"
@@ -475,7 +475,7 @@ export function TechContent() {
           <SectionHead
             overline="Generative UI"
             title="How a tool call becomes a card"
-            body="The model never streams React. Instead, each tool returns clean JSON that the client maps to a component — adding a new visual = one tool + one case."
+            body="The model never streams React. Instead, each tool returns clean JSON that the client maps to a component - adding a new visual = one tool + one case."
           />
           <Reveal className="mt-6 rounded-3xl border border-border bg-card/50 p-4 shadow-sm sm:p-6">
             <MiniFlow
@@ -489,17 +489,17 @@ export function TechContent() {
           </Reveal>
         </section>
 
-        {/* Map 4 — Visual search */}
+        {/* Map 4 - Visual search */}
         <section className="py-12">
           <SectionHead
             overline="The flagship pipeline"
-            title="Visual search — photo to product"
+            title="Visual search - photo to product"
             body="Snap a photo of something you saw, and Aura ranks real Kapruka products by how they actually look. Six stages, two models, one vector space."
           />
           <Timeline stages={VISION} />
         </section>
 
-        {/* Map 5 — Stack */}
+        {/* Map 5 - Stack */}
         <section className="py-6">
           <SectionHead
             overline="The toolkit"
@@ -549,8 +549,8 @@ export function TechContent() {
         <section className="py-6">
           <SectionHead
             overline="Loyalty, done right"
-            title="Aura Prestige — tiers that can't be gamed"
-            body="Every shopper climbs a five-rung ladder. The twist: only PAID orders count, and each one is verified live against Kapruka — so the perks stay honest and the status is earned."
+            title="Aura Prestige - tiers that can't be gamed"
+            body="Every shopper climbs a five-rung ladder. The twist: only PAID orders count, and each one is verified live against Kapruka - so the perks stay honest and the status is earned."
           />
           <TierLadder />
           <Timeline stages={PRESTIGE} />
@@ -559,7 +559,7 @@ export function TechContent() {
               <ShieldCheck className="mt-0.5 size-5 shrink-0 text-jade" />
               <p className="text-sm leading-relaxed text-muted-foreground">
                 <span className="font-semibold text-foreground">Why it can&rsquo;t be farmed:</span>{" "}
-                creating a checkout link earns nothing, and Kapruka has no payment webhook — so a
+                creating a checkout link earns nothing, and Kapruka has no payment webhook - so a
                 tier credit requires a real, emailed order number that <span className="font-mono text-xs">trackOrder</span>{" "}
                 confirms as paid. Numbers are globally unique (one order, one account), de-duplicated
                 on write, and your count is read server-side, never trusted from the browser.
@@ -568,12 +568,12 @@ export function TechContent() {
           </Reveal>
         </section>
 
-        {/* Map 6 — Data model */}
+        {/* Map 6 - Data model */}
         <section className="py-12">
           <SectionHead
             overline="What we store"
             title="The data model"
-            body="Everything is per-user and locked down with row-level security — except the embedding cache, which is a shared catalog index."
+            body="Everything is per-user and locked down with row-level security - except the embedding cache, which is a shared catalog index."
           />
           <Stagger className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {TABLES.map((t) => (

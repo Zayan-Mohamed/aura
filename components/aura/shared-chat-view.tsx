@@ -24,7 +24,7 @@ import { ChatMessage } from "./message";
 import { CheckoutCard } from "./checkout-card";
 import { ProductImage } from "./product-image";
 
-/** Today (Asia/Colombo) as YYYY-MM-DD — the earliest selectable delivery date. */
+/** Today (Asia/Colombo) as YYYY-MM-DD - the earliest selectable delivery date. */
 function todayColombo(): string {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Colombo",
@@ -106,7 +106,7 @@ function CheckoutDrawer({ open, onClose }: { open: boolean; onClose: () => void 
       setStatus("done");
     } catch {
       setStatus("error");
-      setError("Network hiccup — please try again.");
+      setError("Network hiccup - please try again.");
     }
   };
 
@@ -267,7 +267,7 @@ function CheckoutDrawer({ open, onClose }: { open: boolean; onClose: () => void 
 /**
  * Read-only view of a shared chat: the frozen transcript (with its product
  * cards), plus a basket + checkout form so the recipient can buy what they see.
- * No AI chat — viewing, basket and checkout only.
+ * No AI chat - viewing, basket and checkout only.
  */
 export function SharedChatView({ title, messages }: { title: string; messages: AuraUIMessage[] }) {
   const { count } = useBasket();
@@ -301,7 +301,7 @@ export function SharedChatView({ title, messages }: { title: string; messages: A
       <main className="aura-scroll relative w-full flex-1 overflow-y-auto">
         <div className="mx-auto w-full max-w-3xl px-5 pb-32 pt-6 sm:px-6">
           <div className="mb-6 rounded-2xl border border-border bg-card/60 px-4 py-3 text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">{title}</span> — someone shared this Aura chat
+            <span className="font-medium text-foreground">{title}</span> - someone shared this Aura chat
             with you. Browse the picks, add what you like to your basket, and check out securely.
           </div>
           <div className="flex flex-col gap-6">

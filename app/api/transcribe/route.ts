@@ -1,12 +1,12 @@
 /**
- * Speech-to-text for voice input — wraps Groq's OpenAI-compatible Whisper
+ * Speech-to-text for voice input - wraps Groq's OpenAI-compatible Whisper
  * endpoint. The composer records a short audio clip in the browser and POSTs it
  * here as multipart form-data; we forward it to Groq and hand back plain text
  * the shopper can edit before sending.
  *
  * Whisper transcribes Sinhala and Tamil speech well (and English/Singlish/
  * Tanglish phonetically), so this is the lowest-risk way to let someone's amma
- * just *talk* to Aura. No spoken replies here — read-aloud uses the browser's
+ * just *talk* to Aura. No spoken replies here - read-aloud uses the browser's
  * built-in speech synthesis on the client (zero extra cost/keys).
  */
 export const runtime = "nodejs";
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "No audio received." }, { status: 400 });
   }
   if (file.size > MAX_BYTES) {
-    return Response.json({ error: "That clip is too long — keep it under a minute." }, { status: 413 });
+    return Response.json({ error: "That clip is too long - keep it under a minute." }, { status: 413 });
   }
 
   // Optional language hint from the client (the profile language, when set) so
@@ -66,7 +66,7 @@ export async function POST(req: Request) {
       return Response.json(
         {
           error: limited
-            ? "Voice is a touch busy right now — try again in a moment, or type it."
+            ? "Voice is a touch busy right now - try again in a moment, or type it."
             : "I couldn't catch that. Mind trying again, or typing it?",
         },
         { status: limited ? 429 : 502 },
