@@ -261,3 +261,16 @@
     animation: none !important;
   }
 }
+
+/* `html` reserves a scrollbar gutter on BOTH edges (see base styles), which insets
+   <body> by the gutter width. Onborda reads target positions from viewport-relative
+   getBoundingClientRect() but renders its overlay inside that inset body, so every
+   highlight drifts right by the left gutter. TourProvider measures that inset into
+   --onborda-x-fix; counter-translate the overlay by it so the spotlight + card align
+   exactly. (Only the inline axis is affected — the top gutter is 0.) */
+[data-name="onborda-overlay"] {
+  transform: translateX(calc(-1 * var(--onborda-x-fix, 0px)));
+  /* The transform creates a stacking context; keep it above Onborda's own
+     z-[900] click-catcher backdrop so the card stays interactive. */
+  z-index: 901;
+}
