@@ -28,7 +28,8 @@ const contentSecurityPolicy = [
   "font-src 'self' data:",
   "media-src 'self' blob:",
   "worker-src 'self' blob:",
-  "connect-src 'self' https://va.vercel-scripts.com https://vitals.vercel-insights.com",
+  // Supabase auth/postgrest/storage (https) + realtime (wss) run in the browser.
+  "connect-src 'self' https://va.vercel-scripts.com https://vitals.vercel-insights.com https://*.supabase.co wss://*.supabase.co",
   "manifest-src 'self'",
   "upgrade-insecure-requests",
 ].join("; ");
