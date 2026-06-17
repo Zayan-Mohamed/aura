@@ -11,6 +11,29 @@
 
 export type TierId = "bronze" | "silver" | "gold" | "diamond" | "aura";
 
+/**
+ * Order-count thresholds at which a tier's *enforced* perk switches on. These are
+ * the single source of truth for gating: the chat route reads them to filter the
+ * runtime toolset, inject the Gold delivery directive, etc. They intentionally
+ * mirror the matching tier's `minOrders` so "reached the tier" ⇔ "perk unlocked".
+ */
+export const TIER_GATES = {
+  /** Silver: Aura sends proactive occasion-reminder / gift-idea emails. */
+  proactiveConcierge: 1,
+  /** Gold: always-on delivery confidence (saved city auto-passed as deliverTo). */
+  priorityLogistics: 3,
+  /** Diamond: the `planGift` autonomous-gifting tool is in the runtime toolset. */
+  autonomousConcierge: 10,
+} as const;
+
+/**
+ * Whether a shopper with `orderCount` verified orders has unlocked the perk gated
+ * at `gate`. Guests / unknown counts (undefined) never qualify.
+ */
+export function hasPerk(orderCount: number | undefined, gate: number): boolean {
+  return typeof orderCount === "number" && Number.isFinite(orderCount) && orderCount >= gate;
+}
+
 export type Tier = {
   id: TierId;
   /** Display name (without the "Aura " prefix). */
@@ -62,15 +85,15 @@ export const TIERS: Tier[] = [
     id: "silver",
     name: "Silver",
     minOrders: 1,
-    unlock: "Context Vault",
-    tagline: "Aura remembers your people, places and preferences — so you never repeat yourself.",
+    unlock: "Proactive Concierge",
+    tagline: "Aura watches your calendar and reaches out — gentle reminders and gift ideas before the day arrives.",
     perks: [
-      "Saved delivery addresses & recipients",
-      "Remembered preferences and gifting occasions",
-      "“Shall I send the usual to Kandy?” shortcuts",
+      "Occasion & birthday email reminders",
+      "Curated gift ideas a few days before",
+      "Aura nudges you so you never miss the date",
     ],
     agentDirective:
-      "The shopper is a Silver member — their Context Vault is unlocked. You already remember their saved addresses, people and preferences (see the profile above); use them proactively and, when natural, warmly acknowledge their Silver status (e.g. “Welcome back — shall I send the usual to Kandy?”). Don't re-ask for details you already hold.",
+      "The shopper is a Silver member — Proactive Concierge is unlocked, so you can look after them between visits. Offer to remember important dates (birthdays, anniversaries, sympathy follow-ups) and reassure them you'll send a gentle email reminder with gift ideas a few days before. When it fits, invite them to save an occasion. Warmly acknowledge their Silver status. (Remembering their saved address/preferences is standard for everyone — the Silver perk is the proactive outreach.)",
     color: {
       text: "text-[oklch(0.6_0.02_255)] dark:text-[oklch(0.8_0.02_255)]",
       chip: "bg-[oklch(0.6_0.02_255)]/14 text-[oklch(0.52_0.02_255)] dark:text-[oklch(0.84_0.02_255)]",
@@ -84,14 +107,14 @@ export const TIERS: Tier[] = [
     name: "Gold",
     minOrders: 3,
     unlock: "Priority Logistics",
-    tagline: "Your delivery comes first — coveted same-day and next-day slots, secured early.",
+    tagline: "Delivery confidence on by default — Aura checks feasibility on every search and shows only what truly arrives.",
     perks: [
-      "Prioritised delivery checks",
-      "First pick of same-day / next-day slots",
-      "Perishables (cakes, flowers) expedited",
+      "Always-on delivery confidence",
+      "Every search checked against real delivery",
+      "Perishable freshness flagged first",
     ],
     agentDirective:
-      "The shopper is a Gold member — Priority Logistics is unlocked. Briefly acknowledge their status and proactively offer to expedite: check delivery early and surface the fastest (same-day / next-day) options for perishables before they fill up.",
+      "The shopper is a Gold member — Priority Logistics is unlocked. Treat delivery confidence as ALWAYS-ON: their saved city is passed as deliverTo on every search, so you only ever show what can actually arrive, with perishables flagged for freshness first. Briefly acknowledge their Gold status. (Don't promise faster Kapruka slots — your edge is showing only what genuinely reaches them.)",
     color: {
       text: "text-gold",
       chip: "bg-gold/14 text-gold",
@@ -108,11 +131,11 @@ export const TIERS: Tier[] = [
     tagline: "Hand Aura a budget and a date — it plans, picks and routes the gift for you.",
     perks: [
       "Budget-and-date autonomous gifting",
-      "Aura selects & schedules the best match",
-      "Set-and-forget occasion delivery",
+      "Aura selects the best in-budget match",
+      "One-tap confirm into checkout",
     ],
     agentDirective:
-      "The shopper is a Diamond member — Autonomous Concierge is unlocked. They can hand you a budget and a date (e.g. “spend Rs 10,000 for my mother's birthday next month”) and you can plan it end-to-end: pick the best-matching gift within budget, confirm once, and schedule it to arrive on the date. Acknowledge this elevated status warmly.",
+      "The shopper is a Diamond member — Autonomous Concierge is unlocked, and you have a dedicated `planGift` tool. When they hand you a budget, occasion, date and city (e.g. “spend Rs 10,000 for my mother's birthday next month in Kandy”), call planGift: it curates the best in-budget, deliverable match and presents it for one-tap confirmation. Acknowledge this elevated status warmly.",
     color: {
       text: "text-[oklch(0.62_0.11_215)] dark:text-[oklch(0.78_0.11_210)]",
       chip: "bg-[oklch(0.62_0.11_215)]/14 text-[oklch(0.55_0.11_215)] dark:text-[oklch(0.82_0.11_210)]",
@@ -125,15 +148,15 @@ export const TIERS: Tier[] = [
     id: "aura",
     name: "Aura",
     minOrders: 25,
-    unlock: "White-Glove Access",
-    tagline: "The elite tier — waived outstation fees and first access to rare, imported seasonal finds.",
+    unlock: "White-Glove Curation",
+    tagline: "The elite tier — first-look curated picks and a concierge who flags any delivery risk before you pay.",
     perks: [
-      "Waived outstation delivery fees",
-      "Early access to limited & imported items",
-      "VIP white-glove handling",
+      "Curated first-look picks from the catalogue",
+      "Proactive outstation freshness & timing checks",
+      "VIP white-glove attention",
     ],
     agentDirective:
-      "The shopper is an Aura member — the elite tier, White-Glove Access unlocked. Treat them as a VIP: mention waived outstation delivery fees where relevant and early access to limited / imported seasonal items. Acknowledge their Aura status with genuine warmth.",
+      "The shopper is an Aura member — the elite tier, White-Glove Curation unlocked. Treat them as a VIP: lead with curated, first-look picks and proactively double-check outstation freshness and timing, flagging any delivery risk before they pay. Your privilege is taste and care — NEVER claim waived delivery fees or special inventory access (Aura can't change Kapruka's prices or stock). Acknowledge their Aura status with genuine warmth.",
     color: {
       text: "text-[oklch(0.62_0.16_330)] dark:text-[oklch(0.78_0.15_330)]",
       chip: "bg-[oklch(0.62_0.16_330)]/14 text-[oklch(0.55_0.16_330)] dark:text-[oklch(0.82_0.15_330)]",

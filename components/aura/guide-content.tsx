@@ -311,7 +311,8 @@ export function GuideContent() {
                   </h2>
                   <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                     Every order you complete quietly lifts you up a private ladder. Silver unlocks a
-                    concierge that remembers your people and places. Gold puts your deliveries first.
+                    concierge that watches your calendar and nudges you before the date. Gold keeps
+                    delivery confidence on by default, so you only ever see what truly arrives.
                     Diamond lets you hand Aura a budget and a date and walk away. And the elite{" "}
                     <span className="font-semibold text-foreground">Aura</span> tier? That one we&rsquo;ll
                     let you discover. Your status is waiting at the top of every chat.

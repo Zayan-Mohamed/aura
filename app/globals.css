@@ -2,6 +2,12 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* Onborda's backdrop/pointer use Tailwind classes (e.g. `fixed inset-0 z-[900]`)
+   that live in its dist bundle. Tailwind v4 only emits classes it sees in scanned
+   sources, so without this the overlay's z-[900] never generates and the tour card
+   ends up below (and click-blocked by) the app content. */
+@source "../node_modules/onborda/dist";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

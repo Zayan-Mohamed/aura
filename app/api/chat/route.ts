@@ -9,14 +9,14 @@ import {
   type InferUIMessageChunk,
   type LanguageModel,
 } from "ai";
-import { makeAuraTools } from "@/lib/tools";
+import { makeAuraTools, gateTools } from "@/lib/tools";
 import type { AuraUIMessage } from "@/lib/ai-types";
 import type { ShopperProfile } from "@/lib/use-profile";
 import { detectLanguage, latestUserText, type DetectedLanguage } from "@/lib/detect-language";
 import { visualSearchEnabled } from "@/lib/flags";
 import { createClient } from "@/lib/supabase/server";
 import { countOrders } from "@/lib/cloud";
-import { tierForOrders } from "@/lib/tiers";
+import { tierForOrders, hasPerk, TIER_GATES } from "@/lib/tiers";
 
 // MCP client + Groq SDK need the Node runtime.
 export const runtime = "nodejs";
@@ -132,6 +132,9 @@ Keep product cards doing the visual work in every language; only your framing se
 - The interface renders your tool results as rich product cards, carousels, delivery cards and checkout links. When a shopper wants to see things, CALL A TOOL — don't describe products in prose or paste links. A wall of text is a failure.
 - Keep spoken text short, charming and human: a sentence or two to frame what you're showing or ask the next question. Let the cards do the showing.
 
+## Asking questions — buttons beat walls of text
+When your next step is a question whose answer is one of a few discrete choices, ask it with the \`askChoice\` tool (tappable buttons) instead of in prose. Use it for: yes/no ("Add a gift message?"), budget bands ("Under Rs 5,000 / Rs 5–10k / No limit"), occasion type, "this or that", colour, which delivery date, "which of these shall I add?", and similar. Give 2–5 short options; tapping sends the shopper's answer back. Set \`multiSelect\` when they may pick several. Do NOT also write the question as text — the buttons already show it. After calling \`askChoice\`, STOP and wait for their tap; don't call more tools or narrate. Keep genuinely OPEN-ended questions (a name, an address, "tell me about the person") as a short typed prompt — buttons only fit a small fixed set of answers.
+
 ## CRITICAL — after any tool call
 The interface ALREADY shows the result as rich cards. Your accompanying text must NOT repeat product names, prices, descriptions, URLs, image links, or markdown tables — that's already on screen. NEVER output HTML tags (e.g. <img>), markdown tables, or pasted links. Write at most ONE short, warm sentence that frames what's shown and asks the next question.
 
@@ -243,17 +246,28 @@ ${lines.join("\n")}
 
 /**
  * Aura Prestige — a one-line status nudge for a signed-in shopper, derived from
- * their order count. The count is sent by the client (like the profile); it only
- * shapes Aura's tone/perk framing, never anything sensitive, so trusting it is
- * fine and saves a per-turn auth round-trip. Absent for guests → no block.
+ * their verified-order count (computed server-side in POST, never client-trusted).
+ * It shapes Aura's tone and which REAL perk to lean on. Absent for guests → no block.
  */
 function tierBlock(orderCount?: number): string {
   if (typeof orderCount !== "number" || !Number.isFinite(orderCount) || orderCount < 0) return "";
   const tier = tierForOrders(orderCount);
   return `\n\n## Aura Prestige (signed-in shopper)
 This shopper is an **Aura ${tier.name}** member (${orderCount} verified order${orderCount === 1 ? "" : "s"}). ${tier.agentDirective}
-Keep it to ONE brief, warm, natural mention — never salesy, never a feature dump, and never invent perks beyond the one described.
+Keep it to ONE brief, warm, natural mention — never salesy, never a feature dump. NEVER invent perks: Aura cannot waive Kapruka's delivery fees, change prices, or grant access to special/early inventory, so never imply any of those — only ever reference the perk described above.
 EARNING TIER: a shopper climbs only by verified PAID orders. After a checkout link, warmly invite them to come back with their Kapruka order number (from the confirmation email) so you can track it — a successful trackOrder both shows status AND counts that purchase toward their Aura tier. Never imply an unpaid checkout link counts.`;
+}
+
+/**
+ * Gold+ Priority Logistics directive. The real enforcement is in `searchProducts`
+ * (it auto-passes the saved city as `deliverTo`); this tells the model WHY results
+ * are pre-filtered so it frames the always-on delivery confidence rather than
+ * promising faster Kapruka slots (which Aura can't control).
+ */
+function priorityBlock(orderCount?: number, city?: string): string {
+  if (!hasPerk(orderCount, TIER_GATES.priorityLogistics) || !city) return "";
+  return `\n\n## Priority Logistics (Gold+)
+This shopper's saved city is "${city}". Delivery confidence is ALWAYS-ON for them: their searches are automatically checked against real delivery to "${city}" (deliverTo is applied for you), so you only ever show what can actually arrive, perishables flagged for freshness first. Lean on that certainty — do NOT promise faster or "priority" Kapruka delivery slots, which aren't yours to give.`;
 }
 
 export async function POST(req: Request) {
@@ -315,16 +329,24 @@ export async function POST(req: Request) {
 The shopper uploaded a photo as visual inspiration. Call the \`visualSearch\` tool right away to find the closest-matching Kapruka products — do NOT ask them to describe the image. Then frame the results in one short sentence (e.g. "Found your match!" or "Here are the closest visual matches I could find").`
     : "";
 
+  const savedCity = clamp(profile?.city, 80) || undefined;
+
   const system =
     // Keep the language directive LAST so it stays the most salient instruction,
     // even on the image/tool-error path (where the model otherwise drifts dialect).
     SYSTEM +
     profileBlock(profile) +
     tierBlock(orderCount) +
+    priorityBlock(orderCount, savedCity) +
     imageBlock +
     detectedLanguageBlock(messages, hasLangOverride);
   const modelMessages = await convertToModelMessages(messages);
-  const tools = makeAuraTools({ imageDataUrl, db, userId });
+  // Gate the runtime tool set by tier (e.g. planGift only for Diamond+). The
+  // full set is always DEFINED for client type inference — see gateTools.
+  const tools = gateTools(
+    makeAuraTools({ imageDataUrl, db, userId, orderCount, defaultCity: savedCity }),
+    { orderCount },
+  );
 
   // Skip the primary while it's cooling down from a recent 429 (best-effort).
   let chain = modelChain();

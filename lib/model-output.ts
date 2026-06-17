@@ -125,6 +125,37 @@ export function compareResultToModel(output: unknown): string {
     .join("\n");
 }
 
+/** planGift → compact text: the chosen pick, why, and a few alternates. */
+export function planGiftToModel(output: unknown): string {
+  if (isErr(output)) return `error: ${output.error}`;
+  const o = output as {
+    proposal?: {
+      product: Product;
+      alternates?: Product[];
+      occasion: string;
+      date: string;
+      city: string;
+      budgetLKR: number;
+      rationale?: string;
+    };
+    deliveryContext?: DeliveryContext;
+  };
+  if (!o.proposal) return "No in-budget, deliverable gift could be assembled.";
+  const p = o.proposal;
+  return [
+    `gift proposal for ${p.occasion} → ${p.city} by ${p.date}, budget Rs ${p.budgetLKR}:`,
+    `pick: ${p.product.id} "${p.product.name}" — Rs ${p.product.price?.amount ?? "?"}${
+      deliveryOf(p.product) ? ` (${deliveryOf(p.product)})` : ""
+    }`,
+    p.rationale ? `why: ${p.rationale}` : "",
+    contextLine(o.deliveryContext),
+    p.alternates?.length ? `alternates:\n${productsTable(p.alternates)}` : "",
+    CARDS_NOTE,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
 /** getProduct → compact text, but KEEP the description (the model elaborates from it). */
 export function productDetailToModel(output: unknown): string {
   if (isErr(output)) return `error: ${output.error}`;

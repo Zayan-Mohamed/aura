@@ -12,12 +12,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import * as kapruka from "./kapruka";
 import { visualSearch } from "./visual-search";
 import { countOrders, recordVerifiedOrder } from "./cloud";
-import { tierForOrders, type TierId } from "./tiers";
+import { tierForOrders, hasPerk, TIER_GATES, type TierId } from "./tiers";
 import {
   searchResultToModel,
   visualResultToModel,
   productDetailToModel,
   compareResultToModel,
+  planGiftToModel,
 } from "./model-output";
 
 /**
@@ -27,7 +28,15 @@ import {
  * - `db` / `userId`: the signed-in shopper's Supabase session + id, so a
  *   confirmed track_order can credit their Aura Prestige tier. Absent for guests.
  */
-export type AuraToolContext = { imageDataUrl?: string; db?: SupabaseClient; userId?: string };
+export type AuraToolContext = {
+  imageDataUrl?: string;
+  db?: SupabaseClient;
+  userId?: string;
+  /** Server-authoritative verified-order count — gates tier perks. Absent for guests. */
+  orderCount?: number;
+  /** The shopper's saved delivery city — auto-used as deliverTo for Gold+ Priority Logistics. */
+  defaultCity?: string;
+};
 
 /** Kapruka statuses that are NOT a completed, paid purchase — never credited. */
 const UNPAID_STATUSES = new Set([
@@ -117,6 +126,13 @@ export function makeAuraTools(ctx: AuraToolContext = {}) {
         .describe("Optional ONE concierge-style line explaining WHY you picked these for this shopper (e.g. 'soft, under budget, and reaches Kandy fresh'). Shown above the cards — keep it short, warm, specific. Omit for a plain browse."),
     }),
     execute: async ({ rationale, ...args }) => {
+      // Gold+ Priority Logistics (enforced, not just prompted): default delivery
+      // confidence to their saved city so EVERY search is checked against real
+      // delivery — even if the model forgets to pass deliverTo. A destination the
+      // shopper names explicitly always wins.
+      if (!args.deliverTo && ctx.defaultCity && hasPerk(ctx.orderCount, TIER_GATES.priorityLogistics)) {
+        args.deliverTo = ctx.defaultCity;
+      }
       const res = await kapruka.searchProducts(args);
       // Merge the model's "why these" line into the output so the UI can show
       // it above the carousel (it's not catalog data, so it lives outside kapruka).
@@ -235,6 +251,93 @@ export function makeAuraTools(ctx: AuraToolContext = {}) {
     },
   }),
 
+  askChoice: tool({
+    description:
+      "Ask the shopper a SHORT question with tappable answer buttons instead of asking in plain prose. Use this whenever the answer is one of a few discrete choices — yes/no, a budget band, an occasion type, 'this or that', which colour, pick a delivery date, 'add a gift message?', etc. It's far nicer than a wall of text and keeps the conversation moving. Give 2–5 concise options; the shopper taps and their answer arrives as their next message. Do NOT use it for open-ended questions (a name, an address, free-form ideas) — let them type those. After calling it, STOP and wait for their tap; don't also write the question as text.",
+    inputSchema: z.object({
+      question: z.string().max(160).describe("The one-line question shown above the buttons."),
+      options: z
+        .array(
+          z.object({
+            label: z.string().max(48).describe("Short button text, e.g. 'Under Rs 5,000', 'Yes', 'Roses'."),
+            value: z
+              .string()
+              .max(200)
+              .nullish()
+              .describe("Optional fuller message sent when tapped (defaults to the label). Use it to send a clearer instruction, e.g. label 'Yes' → value 'Yes, go ahead and check delivery to Kandy.'"),
+          }),
+        )
+        .min(2)
+        .max(5)
+        .describe("2–5 answer options."),
+      multiSelect: z
+        .boolean()
+        .nullish()
+        .describe("Set true when the shopper may pick SEVERAL (e.g. 'which of these would you like?'). Default false = pick one, which sends immediately."),
+      note: z.string().max(120).nullish().describe("Optional short helper line under the question."),
+    }),
+    execute: async ({ question, options, multiSelect, note }) => ({
+      question,
+      options: options.map((o) => ({ label: o.label, value: o.value ?? undefined })),
+      multiSelect: multiSelect ?? false,
+      note: note ?? undefined,
+    }),
+    toModelOutput: ({ output }) => ({
+      type: "text",
+      value: `Asked the shopper "${output.question}" with tappable options [${output.options
+        .map((o) => o.label)
+        .join(", ")}]. Their choice will arrive as the next user message — wait for it; don't repeat the question in prose.`,
+    }),
+  }),
+
+  planGift: tool({
+    description:
+      "Autonomous gifting for Diamond-tier members. Given a budget, occasion, delivery date and destination city, search the live catalogue, pick the single best in-budget item that can actually arrive in time, and return ONE curated proposal the shopper confirms in a tap (which flows into the normal createOrder checkout). Use this when a Diamond member hands you a budget + date instead of browsing themselves — don't make them pick.",
+    inputSchema: z.object({
+      budgetLKR: z.number().int().min(500).describe("Total budget in LKR."),
+      occasion: z.string().describe("The occasion, e.g. \"mother's birthday\", 'anniversary', 'sympathy'."),
+      date: z.string().describe("Target delivery date YYYY-MM-DD (Asia/Colombo)."),
+      city: z.string().describe("Destination city (a canonical Kapruka delivery city)."),
+      recipientName: z.string().nullish().describe("Who it's for, if known."),
+      notes: z
+        .string()
+        .max(200)
+        .nullish()
+        .describe("Colour / style / dietary / interest hints to steer the pick."),
+    }),
+    execute: async ({ budgetLKR, occasion, date, city, recipientName, notes }) => {
+      const res = await kapruka.searchProducts({
+        q: deriveGiftQuery(occasion, notes),
+        maxPrice: budgetLKR,
+        deliverTo: city,
+        deliverBy: date,
+        sort: "bestseller",
+        limit: 8,
+      });
+      if ("error" in res) return res;
+      const pick = chooseBestGift(res.products, budgetLKR);
+      if (!pick) {
+        return {
+          error: `Nothing in the catalogue fits Rs ${budgetLKR} and can reach ${city} by ${date}. Suggest widening the budget or moving the date.`,
+        };
+      }
+      return {
+        proposal: {
+          product: pick,
+          alternates: res.products.filter((p) => p.id !== pick.id).slice(0, 3),
+          occasion,
+          date,
+          city,
+          recipientName: recipientName ?? null,
+          budgetLKR,
+          rationale: buildGiftRationale(pick, budgetLKR, city, date),
+        },
+        deliveryContext: res.deliveryContext,
+      };
+    },
+    toModelOutput: ({ output }) => ({ type: "text", value: planGiftToModel(output) }),
+  }),
+
   visualSearch: tool({
     description:
       "Find catalog products that VISUALLY match a photo the shopper just uploaded (an inspiration image — a cake they saw, a dress, a gadget). Call this whenever an image is attached this turn; do NOT ask them to describe it. Embeds the photo and ranks real Kapruka products by visual similarity, returning ranked cards the interface renders. Pass deliverTo/deliverBy if you already know where it's going.",
@@ -270,7 +373,98 @@ export function makeAuraTools(ctx: AuraToolContext = {}) {
   };
 }
 
+// --- planGift helpers -------------------------------------------------------
+
+const GIFT_DELIVERY_RANK: Record<string, number> = {
+  fresh: 0,
+  deliverable: 1,
+  outstation: 2,
+  unavailable: 3,
+};
+
+/** Turn a free-text occasion (+ optional hints) into a broad, catalogue-friendly query. */
+function deriveGiftQuery(occasion: string, notes?: string | null): string {
+  const hint = (notes ?? "").trim();
+  if (hint.length >= 3) return hint.slice(0, 60);
+  const o = occasion.toLowerCase();
+  if (/sympath|funeral|condol|bereave/.test(o)) return "flowers";
+  if (/birthday|anniversar|congrat|celebrat|wedding|valentine/.test(o)) return "gift hamper";
+  return "gift";
+}
+
+/** Best in-budget, deliverable, in-stock pick — prefer the strongest delivery verdict. */
+function chooseBestGift(products: kapruka.Product[], budgetLKR: number): kapruka.Product | null {
+  const affordable = products.filter(
+    (p) =>
+      p.inStock &&
+      typeof p.price?.amount === "number" &&
+      p.price.amount <= budgetLKR &&
+      (p.delivery?.status ?? "deliverable") !== "unavailable",
+  );
+  if (!affordable.length) return null;
+  // Stable sort by delivery verdict; within a verdict the catalogue (bestseller) order holds.
+  return [...affordable].sort(
+    (a, b) =>
+      (GIFT_DELIVERY_RANK[a.delivery?.status ?? "deliverable"] ?? 1) -
+      (GIFT_DELIVERY_RANK[b.delivery?.status ?? "deliverable"] ?? 1),
+  )[0];
+}
+
+/** One warm line the proposal card and model both use to justify the pick. */
+function buildGiftRationale(
+  p: kapruka.Product,
+  budgetLKR: number,
+  city: string,
+  date: string,
+): string {
+  const price = p.price?.amount;
+  const within =
+    typeof price === "number"
+      ? `Rs ${price.toLocaleString("en-LK")} — comfortably within your Rs ${budgetLKR.toLocaleString("en-LK")}`
+      : "within your budget";
+  const arrive = p.delivery?.label ? ` (${p.delivery.label})` : "";
+  return `${within}, and it reaches ${city} by ${date}${arrive}.`;
+}
+
 /** Image-less tool set — used only for client-side type inference. */
 export const auraTools = makeAuraTools();
 
 export type AuraTools = ReturnType<typeof makeAuraTools>;
+
+/** Tools every shopper can call, regardless of tier. */
+const ALWAYS_ON_TOOLS: ReadonlySet<keyof AuraTools> = new Set([
+  "searchProducts",
+  "compareProducts",
+  "getProduct",
+  "listCategories",
+  "listDeliveryCities",
+  "checkDelivery",
+  "createOrder",
+  "trackOrder",
+  "visualSearch",
+  "askChoice",
+]);
+
+/**
+ * Narrow the full tool set down to what the shopper's tier may actually call.
+ *
+ * INVARIANT: `makeAuraTools` always DEFINES every tool (so the compile-time
+ * `InferUITools` union — and thus `AuraUIMessage` — stays a constant superset).
+ * This filters which tools are PASSED to the model at runtime; a tool that's
+ * absent simply never gets invoked, and the client only ever renders parts that
+ * actually arrive, so a narrowed runtime set can never break the typed client.
+ *
+ * - `planGift` (Autonomous Concierge) is added only for Diamond+ — below that
+ *   tier the model literally cannot call it.
+ */
+export function gateTools(tools: AuraTools, ctx: { orderCount?: number }): AuraTools {
+  const allowed = new Set<keyof AuraTools>(ALWAYS_ON_TOOLS);
+  if (hasPerk(ctx.orderCount, TIER_GATES.autonomousConcierge)) allowed.add("planGift");
+
+  const out: Partial<Record<keyof AuraTools, AuraTools[keyof AuraTools]>> = {};
+  for (const key of Object.keys(tools) as (keyof AuraTools)[]) {
+    if (allowed.has(key)) out[key] = tools[key];
+  }
+  // Runtime-narrowed, compile-time type preserved — see the invariant above.
+  return out as AuraTools;
+}

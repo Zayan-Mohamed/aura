@@ -4,7 +4,9 @@ import * as React from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { AnimatePresence, motion } from "motion/react";
-import { Moon, Sun, RotateCcw, AlertTriangle, PanelLeft, Share2, MoreVertical } from "lucide-react";
+import { Moon, Sun, RotateCcw, AlertTriangle, PanelLeft, Share2, MoreVertical, Compass } from "lucide-react";
+import { useOnborda } from "onborda";
+import { MAIN_TOUR } from "@/lib/tours";
 import type { AuraUIMessage } from "@/lib/ai-types";
 import type { ConversationRow, OrderRow } from "@/lib/supabase/types";
 import { AuraMark } from "./aura-mark";
@@ -38,10 +40,12 @@ function HeaderMenu({
   empty,
   onNewChat,
   onShare,
+  onTour,
 }: {
   empty: boolean;
   onNewChat: () => void;
   onShare: () => void;
+  onTour: () => void;
 }) {
   const [open, setOpen] = React.useState(false);
   const [dark, setDark] = React.useState(false);
@@ -120,6 +124,17 @@ function HeaderMenu({
                   <Share2 className="size-4 text-muted-foreground" /> Share chat
                 </button>
               )}
+              <button
+                type="button"
+                role="menuitem"
+                className={item}
+                onClick={() => {
+                  onTour();
+                  setOpen(false);
+                }}
+              >
+                <Compass className="size-4 text-muted-foreground" /> Take a tour
+              </button>
               <button type="button" role="menuitem" className={item} onClick={toggleTheme}>
                 {dark ? (
                   <Sun className="size-4 text-muted-foreground" />
@@ -155,6 +170,31 @@ export function AuraChat() {
   );
   const { messages, sendMessage, status, stop, setMessages, regenerate, error } =
     useChat<AuraUIMessage>({ transport });
+
+  // Guided product tour (Onborda). Auto-runs once for first-time visitors and is
+  // re-launchable any time from the header menu.
+  const { startOnborda } = useOnborda();
+  const startTour = React.useCallback(() => startOnborda(MAIN_TOUR), [startOnborda]);
+  const tourKicked = React.useRef(false);
+  React.useEffect(() => {
+    if (tourKicked.current) return;
+    tourKicked.current = true;
+    let seen = true;
+    try {
+      seen = window.localStorage.getItem("aura-tour-v1") === "1";
+    } catch {
+      /* storage blocked — treat as seen, don't nag */
+    }
+    if (seen) return;
+    try {
+      window.localStorage.setItem("aura-tour-v1", "1");
+    } catch {
+      /* ignore */
+    }
+    // Let the layout settle before highlighting the first target.
+    const t = window.setTimeout(() => startOnborda(MAIN_TOUR), 900);
+    return () => window.clearTimeout(t);
+  }, [startOnborda]);
 
   const busy = status === "submitted" || status === "streaming";
   const ask = React.useCallback(
@@ -453,25 +493,34 @@ export function AuraChat() {
                 Kapruka concierge
               </p>
             </div>
-            <TierBadge orderCount={user ? orderCount : null} onClick={() => setTierOpen(true)} />
+            <span id="tour-tier" className="inline-flex">
+              <TierBadge orderCount={user ? orderCount : null} onClick={() => setTierOpen(true)} />
+            </span>
           </div>
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-            <HeaderMenu
-              empty={empty}
-              onNewChat={newChat}
-              onShare={() => (user ? setShareOpen(true) : setSignInOpen(true))}
-            />
-            <BasketDrawer onCheckout={ask} />
-            <ProfileDrawer
-              profile={profile}
-              onUpdate={update}
-              onClear={clear}
-              signedIn={!!user}
-              occasions={occasions}
-              onAddOccasion={addOccasion}
-              onDeleteOccasion={deleteOccasion}
-              onRequireAuth={() => setSignInOpen(true)}
-            />
+            <span id="tour-menu" className="inline-flex">
+              <HeaderMenu
+                empty={empty}
+                onNewChat={newChat}
+                onShare={() => (user ? setShareOpen(true) : setSignInOpen(true))}
+                onTour={startTour}
+              />
+            </span>
+            <span id="tour-basket" className="inline-flex">
+              <BasketDrawer onCheckout={ask} />
+            </span>
+            <span id="tour-profile" className="inline-flex">
+              <ProfileDrawer
+                profile={profile}
+                onUpdate={update}
+                onClear={clear}
+                signedIn={!!user}
+                occasions={occasions}
+                onAddOccasion={addOccasion}
+                onDeleteOccasion={deleteOccasion}
+                onRequireAuth={() => setSignInOpen(true)}
+              />
+            </span>
           </div>
         </div>
       </header>
@@ -547,7 +596,7 @@ export function AuraChat() {
       {/* Composer */}
       <div className="fixed inset-x-0 bottom-0 z-30">
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-background via-background/85 to-transparent" />
-        <div className="relative mx-auto w-full max-w-7xl px-5 pb-5 pt-2 sm:px-8">
+        <div id="tour-composer" className="relative mx-auto w-full max-w-7xl px-5 pb-5 pt-2 sm:px-8">
           <Composer
             onSend={ask}
             onStop={stop}

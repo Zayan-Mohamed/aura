@@ -14,6 +14,8 @@ import {
   AlertTriangle,
   Sparkles,
   Scale,
+  Gift,
+  MessageCircleQuestion,
 } from "lucide-react";
 import { ProductCarousel } from "./product-carousel";
 import { ProductDetail } from "./product-detail";
@@ -22,6 +24,8 @@ import { CategoryGrid } from "./category-grid";
 import { DeliveryCard } from "./delivery-result";
 import { CheckoutCard } from "./checkout-card";
 import { OrderTrackingCard } from "./order-tracking";
+import { PlanGiftCard } from "./plan-gift-card";
+import { ChoicePrompt } from "./choice-prompt";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type ToolPartLike = {
@@ -43,6 +47,8 @@ const LABELS: Record<string, { icon: React.ElementType; verb: string }> = {
   "tool-trackOrder": { icon: PackageCheck, verb: "Tracking your order" },
   "tool-visualSearch": { icon: Sparkles, verb: "Matching your photo" },
   "tool-compareProducts": { icon: Scale, verb: "Lining them up" },
+  "tool-planGift": { icon: Gift, verb: "Planning the perfect gift" },
+  "tool-askChoice": { icon: MessageCircleQuestion, verb: "One quick question" },
 };
 
 function ToolStatus({ type, query }: { type: string; query?: string }) {
@@ -165,6 +171,23 @@ export function ToolPart({
       return out.checkoutUrl ? <CheckoutCard order={out} /> : null;
     case "tool-trackOrder":
       return out.orderNumber ? <OrderTrackingCard tracking={out} loyalty={out.loyalty} /> : null;
+    case "tool-askChoice":
+      return Array.isArray(out.options) && out.options.length > 0 ? (
+        <ChoicePrompt data={out} onAsk={onAsk} />
+      ) : null;
+    case "tool-planGift":
+      return out.proposal ? (
+        <PlanGiftCard
+          proposal={out.proposal}
+          deliveryContext={out.deliveryContext}
+          onAsk={onAsk}
+        />
+      ) : (
+        <Notice icon={Gift}>
+          I couldn&rsquo;t put a gift together in that budget. Want me to widen it or move the
+          date?
+        </Notice>
+      );
     case "tool-visualSearch": {
       const products = out.products ?? [];
       if (products.length === 0) {
