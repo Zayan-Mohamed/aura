@@ -378,6 +378,7 @@ export function AuraChat() {
   // metadata (image data URLs) and keep just role + parts so the recipient sees
   // the transcript + product cards. Signed-in only (the row is owner-scoped).
   const shareChat = React.useCallback(async (): Promise<string | null> => {
+  
     if (!user) return null;
     const snapshot = messagesRef.current.map((m) => ({ id: m.id, role: m.role, parts: m.parts }));
     if (snapshot.length === 0) return null;
