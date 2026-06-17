@@ -4,6 +4,7 @@ import * as React from "react";
 import { OnbordaProvider, Onborda } from "onborda";
 import { tours } from "@/lib/tours";
 import { TourCard } from "./tour-card";
+import { TourClamp } from "./tour-clamp";
 
 /**
  * Wraps the app in Onborda so any client component below can drive a guided tour
@@ -27,6 +28,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <OnbordaProvider>
+      <TourClamp />
       <Onborda
         steps={tours}
         cardComponent={TourCard}
