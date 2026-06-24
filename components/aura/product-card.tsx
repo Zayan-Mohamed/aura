@@ -140,9 +140,10 @@ export function ProductCard({
               type="button"
               onClick={details}
               aria-label={`Tell me more about ${product.name}`}
-              className="flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-border px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full border border-border px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
-              <Sparkles className="size-3.5" /> Tell me more
+              <Sparkles className="size-3.5 shrink-0" />
+              <span className="truncate">Tell me more</span>
             </button>
             <a
               href={product.url}

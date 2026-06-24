@@ -122,11 +122,15 @@ export function ProductCarousel({
         </p>
         <GalleryNav />
       </div>
-      <CarouselContent className="-ml-3">
+      {/* Gap-based spacing (ml-0 neutralises the primitive's negative margin):
+          the negative-margin + pl trick miscomputes Embla's right scroll bound
+          under containScroll, which left the last card clipped/unreachable. The
+          calc() bases keep whole cards per breakpoint after the gap is removed. */}
+      <CarouselContent className="ml-0 gap-3">
         {products.map((product, i) => (
           <CarouselItem
             key={product.id || i}
-            className="basis-[86%] pl-3 sm:basis-1/2 lg:basis-1/3 xl:basis-1/4"
+            className="basis-[82%] pl-0 sm:basis-[calc(50%-0.375rem)] lg:basis-[calc(33.333%-0.5rem)]"
           >
             <motion.div
               initial={{ opacity: 0, y: 14 }}
