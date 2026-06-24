@@ -17,7 +17,7 @@ import { generateObject } from "ai";
 import { createGroq } from "@ai-sdk/groq";
 import * as kapruka from "./kapruka";
 import type { Product, DeliveryContext } from "./kapruka";
-import { embed, toVectorLiteral } from "./embeddings";
+import { embed, toVectorLiteral, type EmbedInput } from "./embeddings";
 import { rpcClient } from "./supabase/rpc-client";
 
 const groq = createGroq({ apiKey: process.env.GROQ_API_KEY });
@@ -32,9 +32,14 @@ const VISION_MODEL =
 const EXACT_THRESHOLD = 0.65;
 const SIMILAR_THRESHOLD = 0.3;
 
-// Free-tier Voyage (no payment method) is throttled to 3 RPM / 10K tokens-per-min,
-// and image embeddings are pixel-costly - a big candidate batch blows the TPM cap.
-// Keep the pool small enough that one search (query + candidates) fits the limit.
+// How many catalog candidates we embed + rank per search ("clippings"). The
+// challenge demo runs entirely on free tier: Voyage (no payment method) caps us
+// at 3 RPM / 10K tokens-per-min, and catalog images are pixel-costly. A small,
+// curated set is the deliberate choice - it embeds in ONE request that fits well
+// under 10K TPM, and a tight ranked carousel reads more "concierge" than a grid.
+// If Voyage is unavailable/throttled we still show these candidates unranked
+// (see the fallback below), so a quota hit never dead-ends the shopper.
+// Mirrors match_product_embeddings' p_limit.
 const CANDIDATE_LIMIT = 5;
 
 export type VisualVerdict = "exact" | "similar" | "loose" | "none";
@@ -141,54 +146,80 @@ export async function visualSearch(args: {
     const supa = rpcClient();
     const ids = candidates.map((p) => p.id);
 
-    // 3) Embed only cache misses (product images) and store them.
-    const { data: have } = await supa.rpc("product_embeddings_have", { p_ids: ids });
-    const cachedIds = new Set(
-      (have ?? []).map((r: { product_id: string }) => r.product_id),
-    );
-    const misses = candidates.filter((p) => !cachedIds.has(p.id));
-    if (misses.length) {
-      const vecs = await embed(misses.map((p) => ({ image: p.imageUrl as string })));
+    // The catalog candidates are already relevant text matches - so visual
+    // RANKING is an enhancement, not a hard dependency. If anything Voyage-side
+    // fails (most likely a free-tier 429: 3 RPM / 10K TPM), we fall back to
+    // showing these candidates unranked rather than surfacing an error: the
+    // shopper still gets a clean carousel of close finds.
+    let products: VisualMatch[];
+    let topScore = 0;
+    let degraded = false;
+    try {
+      // 3) Find which candidate images we still need to embed (cache misses).
+      const { data: have } = await supa.rpc("product_embeddings_have", { p_ids: ids });
+      const cachedIds = new Set(
+        (have ?? []).map((r: { product_id: string }) => r.product_id),
+      );
+      const misses = candidates.filter((p) => !cachedIds.has(p.id));
+
+      // 4) ONE Voyage request: the shopper's photo (index 0) + every uncached
+      // candidate image, embedded together so a search costs a single round-trip
+      // against the 3 RPM free-tier limit. Then cache the candidate vectors.
+      const batch: EmbedInput[] = [
+        { image: args.imageDataUrl },
+        ...misses.map((p) => ({ image: p.imageUrl as string })),
+      ];
+      const vecs = await embed(batch);
+      const queryVec = vecs[0];
+      if (!queryVec) throw new Error("empty query embedding");
+
       await Promise.all(
         misses.map((p, i) =>
-          vecs[i]
+          vecs[i + 1] // +1 skips the query photo at index 0
             ? supa.rpc("upsert_product_embedding", {
                 p_product_id: p.id,
-                p_embedding: toVectorLiteral(vecs[i]),
+                p_embedding: toVectorLiteral(vecs[i + 1]),
                 p_image_url: p.imageUrl,
               })
             : Promise.resolve(),
         ),
       );
+
+      // 5) Rank the candidates by cosine similarity to the photo, in pgvector.
+      const { data: ranked } = await supa.rpc("match_product_embeddings", {
+        p_query: toVectorLiteral(queryVec),
+        p_ids: ids,
+        p_limit: CANDIDATE_LIMIT,
+      });
+      const scoreById = new Map<string, number>(
+        (ranked ?? []).map((r: { product_id: string; score: number }) => [
+          r.product_id,
+          Number(r.score),
+        ]),
+      );
+
+      // 6) Order by visual score; attach the score for the UI.
+      products = candidates
+        .map((p) => ({ ...p, matchScore: scoreById.get(p.id) ?? 0 }))
+        .sort((a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0));
+      topScore = products[0]?.matchScore ?? 0;
+    } catch (rankErr) {
+      // Graceful degradation: keep the catalog candidates in their text-relevance
+      // order (topScore 0 → the UI shows no match-% badge, just "similar finds").
+      console.error(
+        "[aura/visual-search] ranking unavailable, showing unranked candidates:",
+        rankErr instanceof Error ? rankErr.message : String(rankErr),
+      );
+      products = candidates.map((p) => ({ ...p }));
+      degraded = true;
     }
-
-    // 4) Embed the shopper's photo, then rank candidates by cosine in pgvector.
-    const queryVec = (await embed([{ image: args.imageDataUrl }]))[0];
-    if (!queryVec) return { error: "Couldn't read that image - mind trying another?" };
-
-    const { data: ranked } = await supa.rpc("match_product_embeddings", {
-      p_query: toVectorLiteral(queryVec),
-      p_ids: ids,
-      p_limit: 12,
-    });
-    const scoreById = new Map<string, number>(
-      (ranked ?? []).map((r: { product_id: string; score: number }) => [
-        r.product_id,
-        Number(r.score),
-      ]),
-    );
-
-    // 5) Order by visual score; attach the score for the UI.
-    const products: VisualMatch[] = candidates
-      .map((p) => ({ ...p, matchScore: scoreById.get(p.id) ?? 0 }))
-      .sort((a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0));
-
-    const topScore = products[0]?.matchScore ?? 0;
 
     return {
       caption,
       query,
-      verdict: verdictFor(topScore),
+      // Degraded (no ranking) → "loose" so the UI/model frame it as "closest
+      // visual matches" rather than "none" (which would imply we found nothing).
+      verdict: degraded ? "loose" : verdictFor(topScore),
       topScore,
       products,
       deliveryContext: search.deliveryContext,

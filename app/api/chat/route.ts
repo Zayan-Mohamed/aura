@@ -17,6 +17,7 @@ import { visualSearchEnabled } from "@/lib/flags";
 import { createClient } from "@/lib/supabase/server";
 import { countOrders } from "@/lib/cloud";
 import { tierForOrders, hasPerk, TIER_GATES } from "@/lib/tiers";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 // MCP client + Groq SDK need the Node runtime.
 export const runtime = "nodejs";
@@ -271,6 +272,16 @@ This shopper's saved city is "${city}". Delivery confidence is ALWAYS-ON for the
 }
 
 export async function POST(req: Request) {
+  // Best-effort per-IP throttle so a script can't drain the Groq token quota.
+  // 20 turns/min is far above any real human pace; provider limits back it up.
+  const rl = rateLimit(`chat:${clientIp(req)}`, 20, 60_000);
+  if (!rl.ok) {
+    return new Response(
+      "You're sending messages a little fast - give me a few seconds and try again.",
+      { status: 429, headers: { "retry-after": String(rl.retryAfter) } },
+    );
+  }
+
   let messages: AuraUIMessage[] = [];
   let profile: Partial<ShopperProfile> | undefined;
   let imageDataUrl: string | undefined;

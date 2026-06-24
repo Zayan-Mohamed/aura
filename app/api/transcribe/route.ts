@@ -9,6 +9,8 @@
  * just *talk* to Aura. No spoken replies here - read-aloud uses the browser's
  * built-in speech synthesis on the client (zero extra cost/keys).
  */
+import { clientIp, rateLimit } from "@/lib/rate-limit";
+
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
@@ -21,6 +23,15 @@ const GROQ_STT_URL = "https://api.groq.com/openai/v1/audio/transcriptions";
 const MAX_BYTES = 8 * 1024 * 1024; // ~8 MB ≈ a minute of compressed audio
 
 export async function POST(req: Request) {
+  // Best-effort per-IP throttle on the (rate-limited) Groq audio quota.
+  const rl = rateLimit(`stt:${clientIp(req)}`, 12, 60_000);
+  if (!rl.ok) {
+    return Response.json(
+      { error: "Voice is a touch busy - give it a few seconds and try again, or type it." },
+      { status: 429, headers: { "retry-after": String(rl.retryAfter) } },
+    );
+  }
+
   if (!process.env.GROQ_API_KEY) {
     return Response.json({ error: "Voice input isn't configured." }, { status: 500 });
   }
