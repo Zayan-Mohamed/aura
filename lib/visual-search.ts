@@ -2,7 +2,7 @@
  * Proactive Visual Search pipeline.
  *
  *   shopper photo
- *     → Groq Llama-4 Scout (vision) captions it → broad catalog query
+ *     → Gemini 2.5 Flash (vision) captions it → broad catalog query
  *     → Kapruka search (query-relaxation built in) → candidate products
  *     → Voyage multimodal-3 embeds the photo + candidate images (one shared space)
  *     → pgvector ranks candidates by cosine similarity
@@ -13,17 +13,28 @@
  * by lib/tools.ts).
  */
 import { z } from "zod";
-import { generateObject } from "ai";
+import { generateObject, type LanguageModel } from "ai";
 import { createGroq } from "@ai-sdk/groq";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import * as kapruka from "./kapruka";
 import type { Product, DeliveryContext } from "./kapruka";
 import { embed, toVectorLiteral, type EmbedInput } from "./embeddings";
 import { rpcClient } from "./supabase/rpc-client";
 
 const groq = createGroq({ apiKey: process.env.GROQ_API_KEY });
-// Llama-4 Scout is multimodal on Groq - same provider captions the image.
-const VISION_MODEL =
-  process.env.GROQ_VISION_MODEL ?? "meta-llama/llama-4-scout-17b-16e-instruct";
+const google = process.env.GOOGLE_GEMINI_KEY
+  ? createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_GEMINI_KEY })
+  : null;
+
+// Vision captioner. Groq is decommissioning its only multimodal model
+// (Llama-4 Scout, EOL 2026-07-17) and its recommended replacements are
+// text-only, so we caption with Google Gemini (multimodal, free tier) whenever
+// its key is present, and only fall back to Groq Scout while it still exists.
+function visionModel(): LanguageModel {
+  return google
+    ? google(process.env.GEMINI_VISION_MODEL ?? "gemini-2.5-flash")
+    : groq(process.env.GROQ_VISION_MODEL ?? "meta-llama/llama-4-scout-17b-16e-instruct");
+}
 
 // Cosine bands, calibrated for Voyage multimodal-3 (2026-06-12). Its image↔image
 // cosines run much LOWER than CLIP: same-category (cake photo vs catalog cakes)
@@ -73,7 +84,7 @@ async function captionImage(
 ): Promise<{ query: string; terms: string[] }> {
   try {
     const { object } = await generateObject({
-      model: groq(VISION_MODEL),
+      model: visionModel(),
       schema: captionSchema,
       messages: [
         {

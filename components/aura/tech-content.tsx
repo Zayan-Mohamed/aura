@@ -242,7 +242,8 @@ const ARCH: { label: string; tone: Tone; nodes: NodeT[] }[] = [
     label: "External services",
     tone: "rose",
     nodes: [
-      { icon: Cpu, title: "Groq", sub: "gpt-oss-120b · Llama-4 Scout" },
+      { icon: Cpu, title: "Groq", sub: "gpt-oss-120b · Whisper" },
+      { icon: Eye, title: "Google Gemini", sub: "2.5 Flash (vision)" },
       { icon: Boxes, title: "Kapruka MCP", sub: "live catalog" },
       { icon: ImageIcon, title: "Voyage", sub: "multimodal-3" },
       { icon: Database, title: "Supabase", sub: "Postgres · Auth · pgvector" },
@@ -288,7 +289,7 @@ const VISION: Stage[] = [
     body: "Gated behind a feature flag + login. The image is downscaled to ~512px in the browser, so the upload stays small and fast.",
   },
   {
-    tag: "Groq · Llama-4 Scout",
+    tag: "Google · Gemini 2.5 Flash",
     tone: "gold",
     title: "Caption the image",
     body: "A multimodal model looks at the photo and turns it into a catalog search query plus distinctive attributes (colour, occasion, style).",
@@ -355,7 +356,7 @@ const STACK: { icon: React.ElementType; name: string; role: string }[] = [
   { icon: Atom, name: "React 19", role: "The component model behind every card and drawer." },
   { icon: Workflow, name: "Vercel AI SDK 6", role: "Chat streaming, tool calling, and tool-based generative UI." },
   { icon: Cpu, name: "Groq · gpt-oss-120b", role: "The chat brain - fast, reliable multi-tool calling in every language." },
-  { icon: Eye, name: "Groq · Llama-4 Scout", role: "Vision model that captions uploaded photos for visual search." },
+  { icon: Eye, name: "Google · Gemini 2.5 Flash", role: "Multimodal model that captions uploaded photos for visual search." },
   { icon: Boxes, name: "Kapruka MCP", role: "The single source of truth - live catalog, delivery, and orders." },
   { icon: ImageIcon, name: "Voyage multimodal-3", role: "Image + text embeddings that power visual similarity search." },
   { icon: Database, name: "Supabase", role: "Postgres, Auth (email + Google), row-level security, and pgvector." },
