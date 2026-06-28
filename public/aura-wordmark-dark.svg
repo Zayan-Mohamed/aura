@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 156 56" width="156" height="56" fill="none" role="img" aria-label="Aura">
+  <defs>
+    <linearGradient id="auraGold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f2b35a"/>
+      <stop offset="1" stop-color="#e89635"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(6,6) scale(1.375)" stroke="url(#auraGold)">
+    <circle cx="16" cy="16" r="5.5" fill="url(#auraGold)" stroke="none"/>
+    <g stroke-width="2.2" stroke-linecap="round" opacity="0.9">
+      <line x1="25" y1="16" x2="29.5" y2="16"/>
+      <line x1="22.36" y1="22.36" x2="25.55" y2="25.55"/>
+      <line x1="16" y1="25" x2="16" y2="29.5"/>
+      <line x1="9.64" y1="22.36" x2="6.45" y2="25.55"/>
+      <line x1="7" y1="16" x2="2.5" y2="16"/>
+      <line x1="9.64" y1="9.64" x2="6.45" y2="6.45"/>
+      <line x1="16" y1="7" x2="16" y2="2.5"/>
+      <line x1="22.36" y1="9.64" x2="25.55" y2="6.45"/>
+    </g>
+  </g>
+  <text x="63" y="39" font-family="'Playfair Display', Georgia, 'Times New Roman', serif" font-size="34" font-weight="500" letter-spacing="0.4" fill="#f2eee6">Aura</text>
+</svg>

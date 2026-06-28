@@ -64,8 +64,14 @@ function readRateLimit(error: unknown): { limited: boolean; retryMs: number } {
         ? error
         : JSON.stringify(error ?? "");
   const status = (error as { statusCode?: number })?.statusCode;
+  // Only treat it as a rate limit on a genuine 429, the explicit phrases, or
+  // Groq's exact token-limit code (TPM/TPD). The code match is deliberately
+  // tight - an earlier `\bT[PR]?[DM]\b` also matched bare "TM"/"TD"/"TRM",
+  // which collide with trademarks, product codes ("TD-449"), etc. and would
+  // mislabel an unrelated failure as a rate limit.
   const limited =
-    status === 429 || /rate.?limit|rate_limit_exceeded|tokens per (day|minute)|\bT[PR]?[DM]\b/i.test(msg);
+    status === 429 ||
+    /rate.?limit|rate_limit_exceeded|too many requests|tokens per (day|minute)|\bTP[MD]\b/i.test(msg);
   let retryMs = 60_000;
   const m = msg.match(/try again in\s+(?:(\d+)m)?([\d.]+)s/i);
   if (m) retryMs = (parseInt(m[1] || "0", 10) * 60 + parseFloat(m[2])) * 1000;
